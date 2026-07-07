@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(npx --yes create-next-app@latest . --ts --app --tailwind --eslint --src-dir=false --import-alias \"@/*\" --use-npm --yes)"
+    ]
+  }
+}
