@@ -39,7 +39,15 @@
       "Bash(sips -c 757 826 --cropOffset 206 963 \"/Users/ivan.margraf/Downloads/Criar_um_logo_para_associar_a__Nano_Banana_2_70578.png\" --out /private/tmp/claude-502/-Users-ivan-margraf-app-financeiro/9c70c9a4-3cb8-436a-bd16-6d1ed06eb512/scratchpad/icon-crop-test.png)",
       "Bash(npx firebase *)",
       "Bash(sips -c 700 826 --cropOffset 206 963 \"/Users/ivan.margraf/Downloads/Criar_um_logo_para_associar_a__Nano_Banana_2_70578.png\" --out /private/tmp/claude-502/-Users-ivan-margraf-app-financeiro/9c70c9a4-3cb8-436a-bd16-6d1ed06eb512/scratchpad/icon-crop-test2.png)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(sips -p 826 826 --padColor FFFFFF /private/tmp/claude-502/-Users-ivan-margraf-app-financeiro/9c70c9a4-3cb8-436a-bd16-6d1ed06eb512/scratchpad/icon-crop-test2.png --out /private/tmp/claude-502/-Users-ivan-margraf-app-financeiro/9c70c9a4-3cb8-436a-bd16-6d1ed06eb512/scratchpad/icon-square.png)",
+      "Bash(sips -g pixelWidth -g pixelHeight /private/tmp/claude-502/-Users-ivan-margraf-app-financeiro/9c70c9a4-3cb8-436a-bd16-6d1ed06eb512/scratchpad/icon-square.png)",
+      "Bash(cat)",
+      "Bash(textutil -convert pdf -output sample_contract.pdf sample_contract.txt)",
+      "Bash(cupsfilter sample_contract.txt)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(xargs -I{} echo {})"
     ]
   }
 }

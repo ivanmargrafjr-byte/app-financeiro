@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -58,6 +59,14 @@ export default function LoginPage() {
     <div className="flex flex-1 items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
+          <Image
+            src="/logo-mark.png"
+            alt="Finanças"
+            width={56}
+            height={56}
+            priority
+            className="mb-2"
+          />
           <CardTitle>Entrar</CardTitle>
           <CardDescription>Acesse seu controle financeiro pessoal</CardDescription>
         </CardHeader>

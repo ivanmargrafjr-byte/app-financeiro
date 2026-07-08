@@ -6,8 +6,18 @@ import { anthropic } from "@/lib/anthropic/client"
 
 const extractedContractSchema = z.object({
   number: z.string().nullable().describe("Número/identificação do contrato"),
-  contractor: z.string().nullable().describe("Nome do contratante (quem contrata o serviço)"),
-  contractee: z.string().nullable().describe("Nome do contratado (quem presta o serviço)"),
+  contractor: z
+    .string()
+    .nullable()
+    .describe(
+      "CONTRATANTE: a parte que contrata e paga pelo serviço/objeto do contrato (não é quem executa)"
+    ),
+  contractee: z
+    .string()
+    .nullable()
+    .describe(
+      "CONTRATADO: a parte que presta o serviço ou executa o objeto do contrato (não é quem contrata)"
+    ),
   scope: z.string().nullable().describe("Objeto/escopo do contrato, resumido"),
   startDate: z.string().nullable().describe("Data de início da vigência, no formato YYYY-MM-DD"),
   endDate: z.string().nullable().describe("Data de término da vigência, no formato YYYY-MM-DD"),

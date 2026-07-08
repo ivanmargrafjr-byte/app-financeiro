@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
@@ -46,7 +47,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-full flex-1 flex-col md:flex-row">
       <aside className="border-border flex shrink-0 flex-col border-b p-4 md:w-56 md:border-b-0 md:border-r">
-        <div className="mb-6 px-2 text-lg font-semibold">Finanças</div>
+        <div className="mb-6 flex items-center gap-2 px-2 text-lg font-semibold">
+          <Image src="/logo-mark.png" alt="" width={28} height={28} priority />
+          Finanças
+        </div>
         <nav className="flex flex-1 flex-row gap-1 overflow-x-auto md:flex-col md:overflow-visible">
           {NAV_ITEMS.map((item) => {
             const active = pathname.startsWith(item.href)

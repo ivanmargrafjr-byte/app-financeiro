@@ -24,7 +24,8 @@ export async function POST(request: Request) {
   try {
     const extracted = await extractContractFromPdf(base64Pdf)
     return NextResponse.json(extracted)
-  } catch {
+  } catch (error) {
+    console.error("[contracts/extract] extraction failed:", error)
     return NextResponse.json(
       { error: "Não foi possível extrair os dados do contrato" },
       { status: 422 }
