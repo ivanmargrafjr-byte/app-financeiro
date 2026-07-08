@@ -7,6 +7,7 @@ export type CategorySlice = {
   categoryId: string
   name: string
   icon: string
+  iconUrl?: string
   color: string
   amountCents: number
 }

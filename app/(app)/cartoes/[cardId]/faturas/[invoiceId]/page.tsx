@@ -78,7 +78,7 @@ export default function InvoiceDetailPage({
         <div className="flex items-center justify-between">
           <div>
             <h1 className="flex items-center gap-2 text-xl font-semibold capitalize">
-              {card && <EntityIcon name={card.icon} color={card.color} />}
+              {card && <EntityIcon name={card.icon} color={card.color} imageUrl={card.iconUrl} />}
               {monthLabel(invoice.referenceMonth)}
             </h1>
             <p className="text-muted-foreground text-sm">
@@ -117,7 +117,7 @@ export default function InvoiceDetailPage({
             className="border-border flex items-center justify-between rounded-md border px-3 py-2"
           >
             <div className="flex items-center gap-3">
-              <EntityIcon name={tx.categoryIcon} color={tx.categoryColor} />
+              <EntityIcon name={tx.categoryIcon} color={tx.categoryColor} imageUrl={tx.categoryIconUrl} />
               <div>
                 <p className="flex items-center gap-2 text-sm font-medium">
                   {tx.description}

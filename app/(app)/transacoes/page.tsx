@@ -119,7 +119,7 @@ export default function TransacoesPage() {
                   className="border-border flex items-center justify-between rounded-md border px-3 py-2 hover:bg-accent"
                 >
                   <span className="flex items-center gap-2 text-sm font-medium">
-                    {card && <EntityIcon name={card.icon} color={card.color} />}
+                    {card && <EntityIcon name={card.icon} color={card.color} imageUrl={card.iconUrl} />}
                     {card?.name ?? "Cartão"}
                   </span>
                   <span className="flex items-center gap-2">

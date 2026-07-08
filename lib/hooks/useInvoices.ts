@@ -45,6 +45,7 @@ type PlanTransactionBase = {
   categoryName: string
   categoryColor: string
   categoryIcon: string
+  categoryIconUrl: string | null
   date: string
 }
 
@@ -253,6 +254,7 @@ export function useCreateCardPurchase() {
           categoryName: category.name,
           categoryColor: category.color,
           categoryIcon: category.icon,
+          categoryIconUrl: category.iconUrl ?? null,
           date: values.date,
         })
       })
@@ -326,6 +328,7 @@ export function useSettleTransactionViaCard() {
             categoryName: original.categoryName as string,
             categoryColor: original.categoryColor as string,
             categoryIcon: (original.categoryIcon as string | undefined) ?? DEFAULT_ICON_NAME,
+            categoryIconUrl: (original.categoryIconUrl as string | null | undefined) ?? null,
             date: purchaseDate,
           }
         )
@@ -492,6 +495,7 @@ export function usePayInvoice() {
           categoryName: "Pagamento de fatura",
           categoryColor: card.color,
           categoryIcon: card.icon,
+          categoryIconUrl: card.iconUrl ?? null,
           date: today,
           competenceMonth: today.slice(0, 7),
           accountId: card.linkedAccountId,

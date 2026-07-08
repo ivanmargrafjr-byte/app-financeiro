@@ -186,7 +186,11 @@ export function TransactionForm({
                         className="flex items-center gap-2"
                         style={{ paddingLeft: depth * 16 }}
                       >
-                        <EntityIcon name={category.icon} color={category.color} />
+                        <EntityIcon
+                          name={category.icon}
+                          color={category.color}
+                          imageUrl={category.iconUrl}
+                        />
                         {category.name}
                       </span>
                     </SelectItem>

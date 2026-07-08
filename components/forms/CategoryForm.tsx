@@ -52,6 +52,7 @@ export function CategoryForm({
       name: "",
       type: "despesa",
       icon: DEFAULT_ICON_NAME,
+      iconUrl: undefined,
       color: COLOR_PALETTE[0],
       parentId: null,
       ...defaultValues,
@@ -60,6 +61,7 @@ export function CategoryForm({
 
   const type = form.watch("type")
   const color = form.watch("color")
+  const iconUrl = form.watch("iconUrl")
   const parentOptions = categories.filter(
     (c) => c.type === type && c.parentId === null && c.id !== editingId
   )
@@ -163,7 +165,14 @@ export function CategoryForm({
             <FormItem>
               <FormLabel>Ícone</FormLabel>
               <FormControl>
-                <IconPicker value={field.value} color={color} onChange={field.onChange} />
+                <IconPicker
+                  value={field.value}
+                  color={color}
+                  imageUrl={iconUrl}
+                  folder="categories"
+                  onChange={field.onChange}
+                  onImageChange={(url) => form.setValue("iconUrl", url)}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

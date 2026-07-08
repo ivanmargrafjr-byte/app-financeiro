@@ -5,6 +5,7 @@ export const accountSchema = z.object({
   type: z.enum(["corrente", "poupanca", "carteira"]),
   initialBalance: z.coerce.number(),
   icon: z.string().min(1),
+  iconUrl: z.string().optional(),
   color: z.string().min(1),
 })
 export type AccountFormValues = z.output<typeof accountSchema>

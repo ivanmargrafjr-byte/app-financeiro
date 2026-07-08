@@ -100,6 +100,7 @@ export default function CartoesPage() {
                 dueDay: editingCard.dueDay,
                 linkedAccountId: editingCard.linkedAccountId,
                 icon: editingCard.icon,
+                iconUrl: editingCard.iconUrl,
                 color: editingCard.color,
               }}
               submitLabel="Salvar alterações"
@@ -129,7 +130,7 @@ export default function CartoesPage() {
           <Card key={card.id}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle className="flex items-center gap-2 text-base font-medium">
-                <EntityIcon name={card.icon} color={card.color} />
+                <EntityIcon name={card.icon} color={card.color} imageUrl={card.iconUrl} />
                 <Link href={`/cartoes/${card.id}`} className="hover:underline">
                   {card.name}
                 </Link>

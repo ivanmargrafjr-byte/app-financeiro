@@ -49,12 +49,14 @@ export function CardForm({
       dueDay: 10,
       linkedAccountId: "",
       icon: DEFAULT_ICON_NAME,
+      iconUrl: undefined,
       color: COLOR_PALETTE[8],
       ...defaultValues,
     },
   })
 
   const color = form.watch("color")
+  const iconUrl = form.watch("iconUrl")
 
   return (
     <Form {...form}>
@@ -159,7 +161,14 @@ export function CardForm({
             <FormItem>
               <FormLabel>Ícone</FormLabel>
               <FormControl>
-                <IconPicker value={field.value} color={color} onChange={field.onChange} />
+                <IconPicker
+                  value={field.value}
+                  color={color}
+                  imageUrl={iconUrl}
+                  folder="cards"
+                  onChange={field.onChange}
+                  onImageChange={(url) => form.setValue("iconUrl", url)}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

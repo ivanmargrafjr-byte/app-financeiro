@@ -19,7 +19,11 @@ export default function DashboardPage() {
     // Entries paid via card keep their original doc as a checked historical marker,
     // but the amount that actually counts lives in the card transaction on the
     // invoice's due month — skip the marker here to avoid counting it twice.
-    const txs = (transactions ?? []).filter((t) => t.settledVia !== "card")
+    // Transfers move money between the user's own accounts, so they're neutral —
+    // not real income or expense — and are excluded from these totals too.
+    const txs = (transactions ?? []).filter(
+      (t) => t.settledVia !== "card" && t.origin !== "transfer"
+    )
     const receitasCents = txs
       .filter((t) => t.direction === "in")
       .reduce((acc, t) => acc + t.amountCents, 0)
@@ -38,6 +42,7 @@ export default function DashboardPage() {
           categoryId: t.categoryId || "sem-categoria",
           name: t.categoryName || "Sem categoria",
           icon: t.categoryIcon || DEFAULT_ICON_NAME,
+          iconUrl: t.categoryIconUrl,
           color: t.categoryColor || "#64748b",
           amountCents: t.amountCents,
         })
@@ -140,7 +145,7 @@ export default function DashboardPage() {
             {summary.porCategoria.map((c) => (
               <div key={c.categoryId} className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2">
-                  <EntityIcon name={c.icon} color={c.color} />
+                  <EntityIcon name={c.icon} color={c.color} imageUrl={c.iconUrl} />
                   {c.name}
                 </span>
                 <span className="font-medium">{formatCentsBRL(c.amountCents)}</span>

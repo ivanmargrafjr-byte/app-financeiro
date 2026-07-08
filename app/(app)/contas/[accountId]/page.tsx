@@ -68,7 +68,9 @@ export default function AccountDetailPage({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold">
-            {account && <EntityIcon name={account.icon} color={account.color} />}
+            {account && (
+              <EntityIcon name={account.icon} color={account.color} imageUrl={account.iconUrl} />
+            )}
             {account?.name ?? "Conta"}
           </h1>
           {account && (

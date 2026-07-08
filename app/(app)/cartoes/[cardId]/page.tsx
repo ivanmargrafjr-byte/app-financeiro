@@ -65,7 +65,7 @@ export default function CardDetailPage({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold">
-            {card && <EntityIcon name={card.icon} color={card.color} />}
+            {card && <EntityIcon name={card.icon} color={card.color} imageUrl={card.iconUrl} />}
             {card?.name ?? "Cartão"}
           </h1>
           {card && (

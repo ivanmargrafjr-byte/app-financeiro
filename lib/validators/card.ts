@@ -7,6 +7,7 @@ export const cardSchema = z.object({
   dueDay: z.coerce.number().int().min(1).max(31),
   linkedAccountId: z.string().min(1, "Selecione a conta de pagamento"),
   icon: z.string().min(1),
+  iconUrl: z.string().optional(),
   color: z.string().min(1),
 })
 export type CardFormValues = z.output<typeof cardSchema>

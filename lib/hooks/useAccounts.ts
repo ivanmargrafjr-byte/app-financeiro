@@ -40,6 +40,7 @@ export function useAccounts() {
             initialBalanceCents: data.initialBalanceCents,
             currentBalanceCents: data.currentBalanceCents,
             icon: (data.icon as string | undefined) ?? DEFAULT_ICON_NAME,
+            iconUrl: (data.iconUrl as string | null | undefined) ?? undefined,
             color: data.color,
             archived: data.archived,
             createdAt: tsToMillis(data.createdAt),
@@ -64,6 +65,7 @@ export function useCreateAccount() {
         initialBalanceCents,
         currentBalanceCents: initialBalanceCents,
         icon: values.icon,
+        iconUrl: values.iconUrl ?? null,
         color: values.color,
         archived: false,
         createdAt: serverTimestamp(),
@@ -86,6 +88,7 @@ export function useUpdateAccount() {
         name: values.name,
         type: values.type,
         icon: values.icon,
+        iconUrl: values.iconUrl ?? null,
         color: values.color,
         updatedAt: serverTimestamp(),
       })

@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { v4 as uuidv4 } from "uuid"
 import {
   doc,
+  getDoc,
   getDocs,
   increment,
   query,
@@ -17,8 +19,10 @@ import { tsToMillis } from "@/lib/firebase/timestamp"
 import { monthOfDate } from "@/lib/domain/dateUtils"
 import { toCents } from "@/lib/domain/money"
 import { DEFAULT_ICON_NAME } from "@/lib/iconRegistry"
-import type { Category, Transaction } from "@/lib/types"
+import type { Account, Category, Transaction } from "@/lib/types"
+import { DEFAULT_CATEGORY_COLOR, TRANSFER_ICON_NAME } from "@/lib/types"
 import type { AccountTransactionFormValues } from "@/lib/validators/transaction"
+import type { TransferFormValues } from "@/lib/validators/transfer"
 
 function signedAmount(direction: "in" | "out", amountCents: number) {
   return direction === "in" ? amountCents : -amountCents
@@ -35,6 +39,7 @@ export function mapTransactionDoc(id: string, data: Record<string, unknown>): Tr
     categoryName: data.categoryName as string,
     categoryColor: data.categoryColor as string,
     categoryIcon: (data.categoryIcon as string | undefined) ?? DEFAULT_ICON_NAME,
+    categoryIconUrl: (data.categoryIconUrl as string | null | undefined) ?? undefined,
     date: data.date as string,
     competenceMonth: data.competenceMonth as string,
     createdAt: tsToMillis(data.createdAt),
@@ -45,6 +50,8 @@ export function mapTransactionDoc(id: string, data: Record<string, unknown>): Tr
     settled: (data.settled as boolean | undefined) ?? true,
     accountId: data.accountId as string | undefined,
     recurringSeriesId: data.recurringSeriesId as string | undefined,
+    counterAccountId: data.counterAccountId as string | undefined,
+    transferGroupId: data.transferGroupId as string | undefined,
     settledVia: data.settledVia as Transaction["settledVia"],
     linkedCardId: data.linkedCardId as string | undefined,
     linkedInvoiceId: data.linkedInvoiceId as string | undefined,
@@ -68,12 +75,10 @@ export function useAccountTransactions(accountId: string) {
     queryKey: accountTransactionsQueryKey(user?.uid, accountId),
     enabled: !!user,
     queryFn: async (): Promise<Transaction[]> => {
+      // No origin filter: this also picks up transfer legs booked against this
+      // account (card-origin docs never set accountId, so they're naturally excluded).
       const snap = await getDocs(
-        query(
-          transactionsCol(user!.uid),
-          where("origin", "==", "account"),
-          where("accountId", "==", accountId)
-        )
+        query(transactionsCol(user!.uid), where("accountId", "==", accountId))
       )
       return snap.docs
         .map((d) => mapTransactionDoc(d.id, d.data()))
@@ -137,6 +142,7 @@ export function useCreateAccountTransaction() {
         categoryName: category.name,
         categoryColor: category.color,
         categoryIcon: category.icon,
+        categoryIconUrl: category.iconUrl ?? null,
         date: values.date,
         competenceMonth: monthOfDate(values.date),
         accountId: values.accountId,
@@ -204,6 +210,7 @@ export function useUpdateAccountTransaction() {
           categoryName: category.name,
           categoryColor: category.color,
           categoryIcon: category.icon,
+          categoryIconUrl: category.iconUrl ?? null,
           date: values.date,
           competenceMonth: monthOfDate(values.date),
           accountId: values.accountId,
@@ -293,6 +300,112 @@ export function useDeleteAccountTransaction() {
           }
         }
         trx.delete(txRef)
+      })
+    },
+    onSuccess: () => invalidateTransactionQueries(queryClient, user?.uid),
+  })
+}
+
+/**
+ * Moves money between two of the user's own accounts. Writes one transaction leg per
+ * account (linked by transferGroupId) and updates both balances atomically — unlike a
+ * regular lançamento, a transfer is always settled immediately, there's nothing to efetivar.
+ */
+export function useCreateTransfer() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      fromAccount,
+      toAccount,
+      values,
+    }: {
+      fromAccount: Account
+      toAccount: Account
+      values: TransferFormValues
+    }) => {
+      if (fromAccount.id === toAccount.id) {
+        throw new Error("Selecione contas diferentes")
+      }
+      const amountCents = toCents(values.amount)
+      const description = values.description?.trim() || "Transferência"
+      const competenceMonth = monthOfDate(values.date)
+      const transferGroupId = uuidv4()
+      const uid = user!.uid
+
+      await runTransaction(db, async (trx) => {
+        trx.update(accountDocRef(uid, fromAccount.id), {
+          currentBalanceCents: increment(-amountCents),
+          updatedAt: serverTimestamp(),
+        })
+        trx.update(accountDocRef(uid, toAccount.id), {
+          currentBalanceCents: increment(amountCents),
+          updatedAt: serverTimestamp(),
+        })
+
+        const base = {
+          amountCents,
+          categoryId: "",
+          categoryName: "Transferência",
+          categoryColor: DEFAULT_CATEGORY_COLOR,
+          categoryIcon: TRANSFER_ICON_NAME,
+          categoryIconUrl: null,
+          date: values.date,
+          competenceMonth,
+          origin: "transfer" as const,
+          transferGroupId,
+          settled: true,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }
+
+        trx.set(doc(transactionsCol(uid)), {
+          ...base,
+          direction: "out",
+          description: `${description} para ${toAccount.name}`,
+          accountId: fromAccount.id,
+          counterAccountId: toAccount.id,
+        })
+        trx.set(doc(transactionsCol(uid)), {
+          ...base,
+          direction: "in",
+          description: `${description} de ${fromAccount.name}`,
+          accountId: toAccount.id,
+          counterAccountId: fromAccount.id,
+        })
+      })
+    },
+    onSuccess: () => invalidateTransactionQueries(queryClient, user?.uid),
+  })
+}
+
+/** Undoes a transfer: reverses both legs' balance effect and deletes both docs. */
+export function useDeleteTransfer() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (transactionId: string) => {
+      const uid = user!.uid
+      const primarySnap = await getDoc(transactionDocRef(uid, transactionId))
+      if (!primarySnap.exists()) return
+      const primary = primarySnap.data()
+      if (primary.origin !== "transfer") throw new Error("Lançamento inválido")
+
+      const legsSnap = await getDocs(
+        query(transactionsCol(uid), where("transferGroupId", "==", primary.transferGroupId))
+      )
+
+      await runTransaction(db, async (trx) => {
+        for (const legDoc of legsSnap.docs) {
+          const data = legDoc.data()
+          trx.update(accountDocRef(uid, data.accountId as string), {
+            currentBalanceCents: increment(-signedAmount(data.direction, data.amountCents)),
+            updatedAt: serverTimestamp(),
+          })
+          trx.delete(legDoc.ref)
+        }
       })
     },
     onSuccess: () => invalidateTransactionQueries(queryClient, user?.uid),

@@ -48,7 +48,7 @@ function CategoryRow({
       }
     >
       <span className="flex items-center gap-2 text-sm">
-        <EntityIcon name={category.icon} color={category.color} />
+        <EntityIcon name={category.icon} color={category.color} imageUrl={category.iconUrl} />
         {category.name}
         {category.isDefault && (
           <Badge variant="secondary" className="text-xs">
@@ -202,6 +202,7 @@ export default function CategoriasPage() {
                 name: editingCategory.name,
                 type: editingCategory.type,
                 icon: editingCategory.icon,
+                iconUrl: editingCategory.iconUrl,
                 color: editingCategory.color,
                 parentId: editingCategory.parentId,
               }}

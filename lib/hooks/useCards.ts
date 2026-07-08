@@ -32,6 +32,7 @@ export function useCards() {
             dueDay: data.dueDay,
             linkedAccountId: data.linkedAccountId,
             icon: (data.icon as string | undefined) ?? DEFAULT_ICON_NAME,
+            iconUrl: (data.iconUrl as string | null | undefined) ?? undefined,
             color: data.color,
             archived: data.archived,
             createdAt: tsToMillis(data.createdAt),
@@ -55,6 +56,7 @@ export function useCreateCard() {
         dueDay: values.dueDay,
         linkedAccountId: values.linkedAccountId,
         icon: values.icon,
+        iconUrl: values.iconUrl ?? null,
         color: values.color,
         archived: false,
         createdAt: serverTimestamp(),
@@ -77,6 +79,7 @@ export function useUpdateCard() {
         dueDay: values.dueDay,
         linkedAccountId: values.linkedAccountId,
         icon: values.icon,
+        iconUrl: values.iconUrl ?? null,
         color: values.color,
       })
     },

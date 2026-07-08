@@ -16,7 +16,11 @@ import {
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { SettleTransactionDialog } from "@/components/transactions/SettleTransactionDialog"
 import { formatCentsBRL } from "@/lib/domain/money"
-import { useDeleteAccountTransaction, useReverseTransaction } from "@/lib/hooks/useTransactions"
+import {
+  useDeleteAccountTransaction,
+  useDeleteTransfer,
+  useReverseTransaction,
+} from "@/lib/hooks/useTransactions"
 import { useDeleteRecurringOccurrence } from "@/lib/hooks/useRecurringRules"
 import { useReverseCardSettlement } from "@/lib/hooks/useInvoices"
 import type { Transaction } from "@/lib/types"
@@ -32,14 +36,16 @@ export function TransactionListItem({
   const reverseTransaction = useReverseTransaction()
   const reverseCardSettlement = useReverseCardSettlement()
   const deleteTransaction = useDeleteAccountTransaction()
+  const deleteTransfer = useDeleteTransfer()
   const deleteRecurringOccurrence = useDeleteRecurringOccurrence()
   const [settleOpen, setSettleOpen] = useState(false)
 
   const isCard = tx.origin === "card"
+  const isTransfer = tx.origin === "transfer"
   const paidViaCard = tx.settledVia === "card"
-  // Card purchases are already committed to an invoice the moment they're created —
+  // Card purchases and transfers are already committed the moment they're created —
   // there's no separate "efetivar" step for them, so treat them as settled for display.
-  const settled = isCard || tx.settled
+  const settled = isCard || isTransfer || tx.settled
 
   // A checked account entry that was paid with a card keeps its original date/month
   // as a historical marker, but the real (totaled) charge lives on the invoice.
@@ -83,10 +89,19 @@ export function TransactionListItem({
     }
   }
 
+  async function handleDeleteTransfer() {
+    try {
+      await deleteTransfer.mutateAsync(tx.id)
+      toast.success("Transferência excluída")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível excluir a transferência")
+    }
+  }
+
   return (
     <div className="border-border flex items-center justify-between rounded-md border px-3 py-2">
       <div className="flex items-center gap-3">
-        <EntityIcon name={tx.categoryIcon} color={tx.categoryColor} />
+        <EntityIcon name={tx.categoryIcon} color={tx.categoryColor} imageUrl={tx.categoryIconUrl} />
         <div>
           <p className="flex items-center gap-2 text-sm font-medium">
             {tx.description}
@@ -103,6 +118,11 @@ export function TransactionListItem({
             {paidViaCard && (
               <Badge variant="secondary" className="text-xs">
                 Pago no cartão
+              </Badge>
+            )}
+            {isTransfer && (
+              <Badge variant="secondary" className="text-xs">
+                Transferência
               </Badge>
             )}
             {!settled && (
@@ -149,7 +169,9 @@ export function TransactionListItem({
               }
             />
             <DropdownMenuContent align="end">
-              {paidViaCard ? (
+              {isTransfer ? (
+                <DropdownMenuItem onClick={handleDeleteTransfer}>Excluir</DropdownMenuItem>
+              ) : paidViaCard ? (
                 <>
                   <DropdownMenuItem render={<Link href={faturaHref!} />}>
                     Ver fatura

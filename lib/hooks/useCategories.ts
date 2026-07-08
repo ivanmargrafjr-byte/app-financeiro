@@ -29,6 +29,7 @@ export function useCategories() {
             name: data.name,
             type: data.type as CategoryType,
             icon: (data.icon as string | undefined) ?? DEFAULT_ICON_NAME,
+            iconUrl: (data.iconUrl as string | null | undefined) ?? undefined,
             color: data.color,
             archived: data.archived,
             isDefault: data.isDefault,
@@ -51,6 +52,7 @@ export function useCreateCategory() {
         type: values.type,
         color: values.color,
         icon: values.icon,
+        iconUrl: values.iconUrl ?? null,
         archived: false,
         isDefault: false,
         parentId: values.parentId ?? null,
@@ -72,6 +74,7 @@ export function useUpdateCategory() {
         name: values.name,
         type: values.type,
         icon: values.icon,
+        iconUrl: values.iconUrl ?? null,
         color: values.color,
         parentId: values.parentId ?? null,
       })

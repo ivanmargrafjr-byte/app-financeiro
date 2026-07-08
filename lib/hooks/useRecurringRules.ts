@@ -169,6 +169,7 @@ export async function generateRecurringOccurrencesForMonth(
         categoryName: category?.name ?? "",
         categoryColor: category?.color ?? "#64748b",
         categoryIcon: category?.icon ?? DEFAULT_ICON_NAME,
+        categoryIconUrl: category?.iconUrl ?? null,
         date,
         competenceMonth: month,
         accountId: rule.accountId,

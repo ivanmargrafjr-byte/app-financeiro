@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { MoreVertical, Plus } from "lucide-react"
+import { ArrowLeftRight, MoreVertical, Plus } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { AccountForm } from "@/components/forms/AccountForm"
+import { TransferForm } from "@/components/forms/TransferForm"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatCentsBRL } from "@/lib/domain/money"
@@ -30,13 +31,17 @@ import {
   useCreateAccount,
   useUpdateAccount,
 } from "@/lib/hooks/useAccounts"
+import { useCreateTransfer } from "@/lib/hooks/useTransactions"
+import type { TransferFormValues } from "@/lib/validators/transfer"
 
 export default function ContasPage() {
   const { data: accounts, isLoading } = useAccounts()
   const createAccount = useCreateAccount()
   const updateAccount = useUpdateAccount()
   const archiveAccount = useArchiveAccount()
+  const createTransfer = useCreateTransfer()
   const [open, setOpen] = useState(false)
+  const [transferOpen, setTransferOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<Account | null>(null)
 
   async function handleCreate(values: Parameters<typeof createAccount.mutateAsync>[0]) {
@@ -69,26 +74,60 @@ export default function ContasPage() {
     }
   }
 
+  async function handleTransfer(values: TransferFormValues) {
+    const fromAccount = accounts?.find((a) => a.id === values.fromAccountId)
+    const toAccount = accounts?.find((a) => a.id === values.toAccountId)
+    if (!fromAccount || !toAccount) {
+      toast.error("Selecione contas válidas")
+      return
+    }
+    try {
+      await createTransfer.mutateAsync({ fromAccount, toAccount, values })
+      toast.success("Transferência realizada")
+      setTransferOpen(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível transferir")
+    }
+  }
+
   return (
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Contas</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <Button onClick={() => setOpen(true)}>
-            <Plus className="size-4" />
-            Nova conta
-          </Button>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nova conta</DialogTitle>
-            </DialogHeader>
-            <AccountForm
-              submitLabel="Criar conta"
-              submitting={createAccount.isPending}
-              onSubmit={handleCreate}
-            />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
+            <Button variant="outline" onClick={() => setTransferOpen(true)}>
+              <ArrowLeftRight className="size-4" />
+              Transferir
+            </Button>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Transferência entre contas</DialogTitle>
+              </DialogHeader>
+              <TransferForm
+                submitLabel="Transferir"
+                submitting={createTransfer.isPending}
+                onSubmit={handleTransfer}
+              />
+            </DialogContent>
+          </Dialog>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <Button onClick={() => setOpen(true)}>
+              <Plus className="size-4" />
+              Nova conta
+            </Button>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Nova conta</DialogTitle>
+              </DialogHeader>
+              <AccountForm
+                submitLabel="Criar conta"
+                submitting={createAccount.isPending}
+                onSubmit={handleCreate}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Dialog open={!!editingAccount} onOpenChange={(v) => !v && setEditingAccount(null)}>
@@ -102,6 +141,7 @@ export default function ContasPage() {
                 name: editingAccount.name,
                 type: editingAccount.type,
                 icon: editingAccount.icon,
+                iconUrl: editingAccount.iconUrl,
                 color: editingAccount.color,
               }}
               submitLabel="Salvar alterações"
@@ -131,7 +171,7 @@ export default function ContasPage() {
           <Card key={account.id}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle className="flex items-center gap-2 text-base font-medium">
-                <EntityIcon name={account.icon} color={account.color} />
+                <EntityIcon name={account.icon} color={account.color} imageUrl={account.iconUrl} />
                 <Link href={`/contas/${account.id}`} className="hover:underline">
                   {account.name}
                 </Link>

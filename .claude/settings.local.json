@@ -47,7 +47,8 @@
       "Bash(textutil -convert pdf -output sample_contract.pdf sample_contract.txt)",
       "Bash(cupsfilter sample_contract.txt)",
       "Bash(echo \"exit:$?\")",
-      "Bash(xargs -I{} echo {})"
+      "Bash(xargs -I{} echo {})",
+      "Bash(firebase --version)"
     ]
   }
 }

@@ -9,6 +9,8 @@ export type Account = {
   initialBalanceCents: number
   currentBalanceCents: number
   icon: string
+  /** Custom uploaded image (Firebase Storage download URL); takes precedence over `icon` when set. */
+  iconUrl?: string
   color: string
   archived: boolean
   createdAt: number
@@ -23,6 +25,7 @@ export type Card = {
   dueDay: number
   linkedAccountId: string
   icon: string
+  iconUrl?: string
   color: string
   archived: boolean
   createdAt: number
@@ -35,13 +38,14 @@ export type Category = {
   name: string
   type: CategoryType
   icon: string
+  iconUrl?: string
   color: string
   archived: boolean
   isDefault: boolean
   parentId: string | null
 }
 
-export type TransactionOrigin = "account" | "card"
+export type TransactionOrigin = "account" | "card" | "transfer"
 export type TransactionDirection = "in" | "out"
 
 export type Transaction = {
@@ -55,6 +59,7 @@ export type Transaction = {
   categoryName: string
   categoryColor: string
   categoryIcon: string
+  categoryIconUrl?: string
   date: DateString
   competenceMonth: MonthString
   createdAt: number
@@ -66,6 +71,10 @@ export type Transaction = {
   // origin === 'account'
   accountId?: string
   recurringSeriesId?: string
+
+  // origin === 'transfer' (one doc per leg; accountId above holds this leg's account)
+  counterAccountId?: string
+  transferGroupId?: string
   /**
    * Set when this account entry was efetivada by paying with a card instead of debiting
    * an account: the doc is kept in place (same date/month) as a checked historical marker,
@@ -146,3 +155,4 @@ export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
 }
 
 export const DEFAULT_CATEGORY_COLOR = "#64748b"
+export const TRANSFER_ICON_NAME = "ArrowLeftRight"
