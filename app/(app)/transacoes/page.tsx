@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { Plus } from "lucide-react"
+import { ArrowLeftRight, Plus } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -16,17 +16,23 @@ import {
 } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { TransactionForm } from "@/components/forms/TransactionForm"
+import { TransferForm } from "@/components/forms/TransferForm"
 import { TransactionListItem } from "@/components/transactions/TransactionListItem"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { useAccounts } from "@/lib/hooks/useAccounts"
 import { useCards } from "@/lib/hooks/useCards"
 import { useCategories } from "@/lib/hooks/useCategories"
 import { useMonthInvoices } from "@/lib/hooks/useInvoices"
-import { useCreateAccountTransaction, useMonthTransactions } from "@/lib/hooks/useTransactions"
+import {
+  useCreateAccountTransaction,
+  useCreateTransfer,
+  useMonthTransactions,
+} from "@/lib/hooks/useTransactions"
 import { formatCentsBRL } from "@/lib/domain/money"
 import { monthLabel } from "@/lib/domain/dateUtils"
 import { useMonth } from "@/lib/month/MonthProvider"
 import type { AccountTransactionFormValues } from "@/lib/validators/transaction"
+import type { TransferFormValues } from "@/lib/validators/transfer"
 
 export default function TransacoesPage() {
   const { month } = useMonth()
@@ -36,7 +42,9 @@ export default function TransacoesPage() {
   const { data: categories } = useCategories()
   const { data: invoices, isLoading: isLoadingInvoices } = useMonthInvoices(month)
   const createTransaction = useCreateAccountTransaction()
+  const createTransfer = useCreateTransfer()
   const [open, setOpen] = useState(false)
+  const [transferOpen, setTransferOpen] = useState(false)
 
   const sourceLabel = (tx: { origin: string; accountId?: string; cardId?: string }) => {
     if (tx.origin === "card") return cards?.find((c) => c.id === tx.cardId)?.name ?? "—"
@@ -58,6 +66,22 @@ export default function TransacoesPage() {
     }
   }
 
+  async function handleTransfer(values: TransferFormValues) {
+    const fromAccount = accounts?.find((a) => a.id === values.fromAccountId)
+    const toAccount = accounts?.find((a) => a.id === values.toAccountId)
+    if (!fromAccount || !toAccount) {
+      toast.error("Selecione contas válidas")
+      return
+    }
+    try {
+      await createTransfer.mutateAsync({ fromAccount, toAccount, values })
+      toast.success("Transferência realizada")
+      setTransferOpen(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível transferir")
+    }
+  }
+
   const allTx = transactions ?? []
 
   const estimatedBalanceCents = useMemo(() => {
@@ -72,22 +96,40 @@ export default function TransacoesPage() {
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Transações</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <Button onClick={() => setOpen(true)}>
-            <Plus className="size-4" />
-            Novo lançamento
-          </Button>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Novo lançamento</DialogTitle>
-            </DialogHeader>
-            <TransactionForm
-              submitLabel="Criar lançamento"
-              submitting={createTransaction.isPending}
-              onSubmit={handleCreate}
-            />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
+            <Button variant="outline" onClick={() => setTransferOpen(true)}>
+              <ArrowLeftRight className="size-4" />
+              Transferir
+            </Button>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Transferência entre contas</DialogTitle>
+              </DialogHeader>
+              <TransferForm
+                submitLabel="Transferir"
+                submitting={createTransfer.isPending}
+                onSubmit={handleTransfer}
+              />
+            </DialogContent>
+          </Dialog>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <Button onClick={() => setOpen(true)}>
+              <Plus className="size-4" />
+              Novo lançamento
+            </Button>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Novo lançamento</DialogTitle>
+              </DialogHeader>
+              <TransactionForm
+                submitLabel="Criar lançamento"
+                submitting={createTransaction.isPending}
+                onSubmit={handleCreate}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Card>

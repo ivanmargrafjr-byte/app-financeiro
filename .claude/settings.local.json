@@ -48,7 +48,19 @@
       "Bash(cupsfilter sample_contract.txt)",
       "Bash(echo \"exit:$?\")",
       "Bash(xargs -I{} echo {})",
-      "Bash(firebase --version)"
+      "Bash(firebase --version)",
+      "Bash(curl -s https://finnancialapp.margraf.tec.br/contas)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" https://finnancialapp.margraf.tec.br/contas)",
+      "Bash(curl -s https://finnancialapp.margraf.tec.br/contas -o /tmp/contas.html)",
+      "Read(//tmp/**)",
+      "Bash(vercel ls *)",
+      "Bash(vercel alias *)",
+      "Bash(npm ls *)",
+      "Bash(gh auth *)",
+      "Bash(git config *)",
+      "Bash(security find-internet-password *)",
+      "Bash(brew --version)",
+      "Bash(brew install *)"
     ]
   }
 }

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { SettleTransactionDialog } from "@/components/transactions/SettleTransactionDialog"
+import { EditCardTransactionDialog } from "@/components/transactions/EditCardTransactionDialog"
 import { formatCentsBRL } from "@/lib/domain/money"
 import {
   useDeleteAccountTransaction,
@@ -22,7 +23,7 @@ import {
   useReverseTransaction,
 } from "@/lib/hooks/useTransactions"
 import { useDeleteRecurringOccurrence } from "@/lib/hooks/useRecurringRules"
-import { useReverseCardSettlement } from "@/lib/hooks/useInvoices"
+import { useDeleteCardTransaction, useReverseCardSettlement } from "@/lib/hooks/useInvoices"
 import type { Transaction } from "@/lib/types"
 
 export function TransactionListItem({
@@ -37,8 +38,10 @@ export function TransactionListItem({
   const reverseCardSettlement = useReverseCardSettlement()
   const deleteTransaction = useDeleteAccountTransaction()
   const deleteTransfer = useDeleteTransfer()
+  const deleteCardTransaction = useDeleteCardTransaction()
   const deleteRecurringOccurrence = useDeleteRecurringOccurrence()
   const [settleOpen, setSettleOpen] = useState(false)
+  const [editCardOpen, setEditCardOpen] = useState(false)
 
   const isCard = tx.origin === "card"
   const isTransfer = tx.origin === "transfer"
@@ -98,6 +101,15 @@ export function TransactionListItem({
     }
   }
 
+  async function handleDeleteCardTransaction() {
+    try {
+      await deleteCardTransaction.mutateAsync({ transactionId: tx.id, invoiceId: tx.invoiceId! })
+      toast.success("Lançamento excluído")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível excluir (fatura já paga?)")
+    }
+  }
+
   return (
     <div className="border-border flex items-center justify-between rounded-md border px-3 py-2">
       <div className="flex items-center gap-3">
@@ -150,55 +162,57 @@ export function TransactionListItem({
           {tx.direction === "in" ? "+" : "-"}
           {formatCentsBRL(tx.amountCents)}
         </span>
-        {isCard ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            nativeButton={false}
-            render={<Link href={faturaHref!} />}
-          >
-            Ver fatura
-          </Button>
-        ) : (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button variant="ghost" size="icon" className="size-7">
-                  <MoreVertical className="size-4" />
-                </Button>
-              }
-            />
-            <DropdownMenuContent align="end">
-              {isTransfer ? (
-                <DropdownMenuItem onClick={handleDeleteTransfer}>Excluir</DropdownMenuItem>
-              ) : paidViaCard ? (
-                <>
-                  <DropdownMenuItem render={<Link href={faturaHref!} />}>
-                    Ver fatura
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="ghost" size="icon" className="size-7">
+                <MoreVertical className="size-4" />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end">
+            {isCard ? (
+              <>
+                <DropdownMenuItem render={<Link href={faturaHref!} />}>
+                  Ver fatura
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setEditCardOpen(true)}>Editar</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDeleteCardTransaction}>
+                  Excluir
+                </DropdownMenuItem>
+              </>
+            ) : isTransfer ? (
+              <DropdownMenuItem onClick={handleDeleteTransfer}>Excluir</DropdownMenuItem>
+            ) : paidViaCard ? (
+              <>
+                <DropdownMenuItem render={<Link href={faturaHref!} />}>
+                  Ver fatura
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleReverseCardSettlement}>
+                  Estornar
+                </DropdownMenuItem>
+              </>
+            ) : (
+              <>
+                {!settled && (
+                  <DropdownMenuItem onClick={() => setSettleOpen(true)}>
+                    Efetivar
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleReverseCardSettlement}>
-                    Estornar
-                  </DropdownMenuItem>
-                </>
-              ) : (
-                <>
-                  {!settled && (
-                    <DropdownMenuItem onClick={() => setSettleOpen(true)}>
-                      Efetivar
-                    </DropdownMenuItem>
-                  )}
-                  {settled && (
-                    <DropdownMenuItem onClick={handleReverse}>Estornar</DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={handleDelete}>Excluir</DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+                )}
+                {settled && (
+                  <DropdownMenuItem onClick={handleReverse}>Estornar</DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={handleDelete}>Excluir</DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       {!isCard && !settled && (
         <SettleTransactionDialog tx={tx} open={settleOpen} onOpenChange={setSettleOpen} />
+      )}
+      {isCard && (
+        <EditCardTransactionDialog tx={tx} open={editCardOpen} onOpenChange={setEditCardOpen} />
       )}
     </div>
   )

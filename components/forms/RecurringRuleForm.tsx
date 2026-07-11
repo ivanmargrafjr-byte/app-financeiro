@@ -32,10 +32,12 @@ import {
 } from "@/lib/validators/recurringRule"
 
 export function RecurringRuleForm({
+  defaultValues,
   submitLabel,
   submitting,
   onSubmit,
 }: {
+  defaultValues?: Partial<RecurringRuleFormInput>
   submitLabel: string
   submitting: boolean
   onSubmit: (values: RecurringRuleFormValues) => void
@@ -53,6 +55,8 @@ export function RecurringRuleForm({
       accountId: "",
       dayOfMonth: 5,
       startMonth: currentMonthString(),
+      endMonth: "",
+      ...defaultValues,
     },
   })
 
@@ -205,19 +209,34 @@ export function RecurringRuleForm({
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="startMonth"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Começa em</FormLabel>
-              <FormControl>
-                <Input type="month" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="startMonth"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Começa em</FormLabel>
+                <FormControl>
+                  <Input type="month" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="endMonth"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Termina em (opcional)</FormLabel>
+                <FormControl>
+                  <Input type="month" {...field} value={field.value ?? ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <Button type="submit" disabled={submitting} className="mt-2">
           {submitting ? "Salvando..." : submitLabel}
         </Button>

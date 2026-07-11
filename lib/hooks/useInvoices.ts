@@ -31,6 +31,7 @@ import {
   computeDueDate,
   competenceMonthForInvoice,
   invoiceDocId,
+  resolveInvoiceCycleForPurchase,
 } from "@/lib/domain/invoiceCycle"
 import { buildInstallmentPlan, type InstallmentPlanItem } from "@/lib/domain/installments"
 import { todayDateString } from "@/lib/domain/dateUtils"
@@ -38,6 +39,7 @@ import { toCents } from "@/lib/domain/money"
 import { DEFAULT_ICON_NAME } from "@/lib/iconRegistry"
 import type { Card, Category, Invoice } from "@/lib/types"
 import type { CardPurchaseFormValues } from "@/lib/validators/cardPurchase"
+import type { CardTransactionEditFormValues } from "@/lib/validators/cardTransactionEdit"
 
 type PlanTransactionBase = {
   description: string
@@ -425,6 +427,119 @@ export function useReverseCardSettlement() {
           linkedInvoiceId: deleteField(),
           linkedTransactionIds: deleteField(),
           updatedAt: serverTimestamp(),
+        })
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      queryClient.invalidateQueries({ queryKey: ["invoice"] })
+      queryClient.invalidateQueries({ queryKey: ["transactions"] })
+    },
+  })
+}
+
+/**
+ * Edits a single card-origin transaction line (description, category, amount, date).
+ * Doesn't touch installmentGroupId/Number/Total — re-parceling isn't supported here.
+ * If the new date resolves to a different invoice cycle, moves the doc between
+ * invoices (creating the target invoice if needed). Blocked if either the current or
+ * the target invoice is already paid.
+ */
+export function useUpdateCardTransaction() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      transactionId,
+      card,
+      values,
+      category,
+    }: {
+      transactionId: string
+      card: Card
+      values: CardTransactionEditFormValues
+      category: Category
+    }) => {
+      const uid = user!.uid
+      const txRef = transactionDocRef(uid, transactionId)
+      const newAmountCents = toCents(values.amount)
+
+      await runTransaction(db, async (trx) => {
+        const txSnap = await trx.get(txRef)
+        if (!txSnap.exists()) throw new Error("Lançamento não encontrado")
+        const original = txSnap.data()
+        if (original.origin !== "card") throw new Error("Lançamento inválido")
+
+        const oldInvoiceRef = invoiceDocRef(uid, original.invoiceId as string)
+        const oldInvoiceSnap = await trx.get(oldInvoiceRef)
+        if (oldInvoiceSnap.exists() && oldInvoiceSnap.data()!.status === "paid") {
+          throw new Error("Não é possível editar um lançamento de uma fatura já paga")
+        }
+
+        const referenceMonth = resolveInvoiceCycleForPurchase(values.date, card)
+        const newInvoiceId = invoiceDocId(card.id, referenceMonth)
+        const sameInvoice = newInvoiceId === original.invoiceId
+
+        const base = {
+          description: values.description,
+          categoryId: values.categoryId,
+          categoryName: category.name,
+          categoryColor: category.color,
+          categoryIcon: category.icon,
+          categoryIconUrl: category.iconUrl ?? null,
+          amountCents: newAmountCents,
+          date: values.date,
+          updatedAt: serverTimestamp(),
+        }
+
+        if (sameInvoice) {
+          const delta = newAmountCents - (original.amountCents as number)
+          if (delta !== 0) {
+            trx.update(oldInvoiceRef, { totalAmountCents: increment(delta), updatedAt: serverTimestamp() })
+          }
+          trx.update(txRef, base)
+          return
+        }
+
+        const newInvoiceRef = invoiceDocRef(uid, newInvoiceId)
+        const newInvoiceSnap = await trx.get(newInvoiceRef)
+        if (newInvoiceSnap.exists() && newInvoiceSnap.data()!.status === "paid") {
+          throw new Error("A nova data cairia em uma fatura já paga. Ajuste a data.")
+        }
+
+        if (oldInvoiceSnap.exists()) {
+          trx.update(oldInvoiceRef, {
+            totalAmountCents: increment(-(original.amountCents as number)),
+            updatedAt: serverTimestamp(),
+          })
+        }
+
+        const closingDate = computeClosingDate(referenceMonth, card.closingDay)
+        const dueDate = computeDueDate(referenceMonth, card.closingDay, card.dueDay)
+
+        if (!newInvoiceSnap.exists()) {
+          trx.set(newInvoiceRef, {
+            cardId: card.id,
+            referenceMonth,
+            closingDate,
+            dueDate,
+            totalAmountCents: newAmountCents,
+            status: "open",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          })
+        } else {
+          trx.update(newInvoiceRef, {
+            totalAmountCents: increment(newAmountCents),
+            updatedAt: serverTimestamp(),
+          })
+        }
+
+        trx.update(txRef, {
+          ...base,
+          competenceMonth: competenceMonthForInvoice(dueDate),
+          invoiceId: newInvoiceRef.id,
         })
       })
     },

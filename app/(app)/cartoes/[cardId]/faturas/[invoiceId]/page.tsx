@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { EntityIcon } from "@/components/forms/EntityIcon"
+import { EditCardTransactionDialog } from "@/components/transactions/EditCardTransactionDialog"
 import { useCards } from "@/lib/hooks/useCards"
 import {
   useDeleteCardTransaction,
@@ -24,6 +25,7 @@ import {
 } from "@/lib/hooks/useInvoices"
 import { formatCentsBRL } from "@/lib/domain/money"
 import { monthLabel } from "@/lib/domain/dateUtils"
+import type { Transaction } from "@/lib/types"
 
 export default function InvoiceDetailPage({
   params,
@@ -37,6 +39,7 @@ export default function InvoiceDetailPage({
   const payInvoice = usePayInvoice()
   const deleteTransaction = useDeleteCardTransaction()
   const [paying, setPaying] = useState(false)
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null)
 
   const card = cards?.find((c) => c.id === cardId)
 
@@ -144,6 +147,9 @@ export default function InvoiceDetailPage({
                     }
                   />
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setEditingTx(tx)}>
+                      Editar
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleDelete(tx.id)}>
                       Excluir
                     </DropdownMenuItem>
@@ -154,6 +160,14 @@ export default function InvoiceDetailPage({
           </div>
         ))}
       </div>
+
+      {editingTx && (
+        <EditCardTransactionDialog
+          tx={editingTx}
+          open={!!editingTx}
+          onOpenChange={(v) => !v && setEditingTx(null)}
+        />
+      )}
     </div>
   )
 }

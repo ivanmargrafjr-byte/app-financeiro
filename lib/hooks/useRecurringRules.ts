@@ -77,7 +77,7 @@ export function useCreateRecurringRule() {
         accountId: values.accountId,
         dayOfMonth: values.dayOfMonth,
         startMonth: values.startMonth,
-        endMonth: null,
+        endMonth: values.endMonth || null,
         active: true,
         excludedMonths: [],
         createdAt: serverTimestamp(),
@@ -85,6 +85,31 @@ export function useCreateRecurringRule() {
       })
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: rulesQueryKey(user?.uid) }),
+  })
+}
+
+export function useUpdateRecurringRule() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, values }: { id: string; values: RecurringRuleFormValues }) => {
+      await updateDoc(recurringRuleDocRef(user!.uid, id), {
+        description: values.description,
+        amountCents: toCents(values.amount),
+        direction: values.direction,
+        categoryId: values.categoryId,
+        accountId: values.accountId,
+        dayOfMonth: values.dayOfMonth,
+        startMonth: values.startMonth,
+        endMonth: values.endMonth || null,
+        updatedAt: serverTimestamp(),
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rulesQueryKey(user?.uid) })
+      queryClient.invalidateQueries({ queryKey: ["transactions"] })
+    },
   })
 }
 

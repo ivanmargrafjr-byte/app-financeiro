@@ -1,9 +1,7 @@
 "use client"
 
-import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -15,7 +13,6 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -26,81 +23,35 @@ import {
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { useCategories } from "@/lib/hooks/useCategories"
 import { flattenCategoryTree } from "@/lib/domain/categoryTree"
-import { todayDateString } from "@/lib/domain/dateUtils"
 import {
-  cardPurchaseSchema,
-  type CardPurchaseFormInput,
-  type CardPurchaseFormValues,
-} from "@/lib/validators/cardPurchase"
+  cardTransactionEditSchema,
+  type CardTransactionEditFormInput,
+  type CardTransactionEditFormValues,
+} from "@/lib/validators/cardTransactionEdit"
 
-type ExtractedReceipt = {
-  description: string | null
-  amount: number | null
-  date: string | null
-}
-
-export function CardPurchaseForm({
+export function CardTransactionEditForm({
+  defaultValues,
   submitLabel,
   submitting,
   onSubmit,
 }: {
+  defaultValues: CardTransactionEditFormInput
   submitLabel: string
   submitting: boolean
-  onSubmit: (values: CardPurchaseFormValues) => void
+  onSubmit: (values: CardTransactionEditFormValues) => void
 }) {
   const { data: categories } = useCategories()
   const despesaCategories = categories?.filter((c) => c.type === "despesa")
   const categoryTree = flattenCategoryTree(despesaCategories ?? [])
-  const [extracting, setExtracting] = useState(false)
 
-  const form = useForm<CardPurchaseFormInput, unknown, CardPurchaseFormValues>({
-    resolver: zodResolver(cardPurchaseSchema),
-    defaultValues: {
-      description: "",
-      amount: 0,
-      categoryId: "",
-      date: todayDateString(),
-      installmentTotal: 1,
-    },
+  const form = useForm<CardTransactionEditFormInput, unknown, CardTransactionEditFormValues>({
+    resolver: zodResolver(cardTransactionEditSchema),
+    defaultValues,
   })
-
-  async function handleReceiptChange(selected: File | undefined) {
-    if (!selected) return
-    setExtracting(true)
-    try {
-      const body = new FormData()
-      body.append("file", selected)
-      const res = await fetch("/api/receipts/extract", { method: "POST", body })
-      if (!res.ok) throw new Error("extraction failed")
-
-      const data: ExtractedReceipt = await res.json()
-      if (data.description) form.setValue("description", data.description)
-      if (data.amount != null) form.setValue("amount", data.amount)
-      if (data.date) form.setValue("date", data.date)
-      toast.success("Dados extraídos do recibo — revise antes de salvar")
-    } catch {
-      toast.error("Não foi possível ler o recibo automaticamente. Preencha os campos manualmente.")
-    } finally {
-      setExtracting(false)
-    }
-  }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-        <div className="grid gap-2">
-          <Label>Ler recibo (opcional)</Label>
-          <Input
-            type="file"
-            accept="image/*,.pdf"
-            onChange={(e) => handleReceiptChange(e.target.files?.[0])}
-          />
-          {extracting && (
-            <p className="text-muted-foreground text-xs">
-              Lendo o recibo e preenchendo os campos...
-            </p>
-          )}
-        </div>
         <FormField
           control={form.control}
           name="description"
@@ -144,25 +95,6 @@ export function CardPurchaseForm({
         </div>
         <FormField
           control={form.control}
-          name="installmentTotal"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Parcelas</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min={1}
-                  max={48}
-                  {...field}
-                  value={field.value as number | string}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
           name="categoryId"
           render={({ field }) => (
             <FormItem>
@@ -197,7 +129,11 @@ export function CardPurchaseForm({
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={submitting || extracting} className="mt-2">
+        <p className="text-muted-foreground text-xs">
+          Se a data mudar para fora do ciclo atual, o lançamento é movido para a fatura correta
+          automaticamente.
+        </p>
+        <Button type="submit" disabled={submitting} className="mt-2">
           {submitting ? "Salvando..." : submitLabel}
         </Button>
       </form>

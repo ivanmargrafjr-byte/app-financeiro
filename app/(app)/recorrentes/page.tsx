@@ -26,9 +26,11 @@ import {
   useCreateRecurringRule,
   useDeactivateRecurringRule,
   useRecurringRules,
+  useUpdateRecurringRule,
 } from "@/lib/hooks/useRecurringRules"
-import { formatCentsBRL } from "@/lib/domain/money"
+import { formatCentsBRL, fromCents } from "@/lib/domain/money"
 import { monthLabel } from "@/lib/domain/dateUtils"
+import type { RecurringRule } from "@/lib/types"
 import type { RecurringRuleFormValues } from "@/lib/validators/recurringRule"
 
 export default function RecorrentesPage() {
@@ -36,8 +38,10 @@ export default function RecorrentesPage() {
   const { data: accounts } = useAccounts()
   const { data: categories } = useCategories()
   const createRule = useCreateRecurringRule()
+  const updateRule = useUpdateRecurringRule()
   const deactivateRule = useDeactivateRecurringRule()
   const [open, setOpen] = useState(false)
+  const [editingRule, setEditingRule] = useState<RecurringRule | null>(null)
 
   async function handleCreate(values: RecurringRuleFormValues) {
     try {
@@ -46,6 +50,17 @@ export default function RecorrentesPage() {
       setOpen(false)
     } catch {
       toast.error("Não foi possível criar a recorrência")
+    }
+  }
+
+  async function handleUpdate(values: RecurringRuleFormValues) {
+    if (!editingRule) return
+    try {
+      await updateRule.mutateAsync({ id: editingRule.id, values })
+      toast.success("Recorrência atualizada")
+      setEditingRule(null)
+    } catch {
+      toast.error("Não foi possível atualizar a recorrência")
     }
   }
 
@@ -79,6 +94,31 @@ export default function RecorrentesPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <Dialog open={!!editingRule} onOpenChange={(v) => !v && setEditingRule(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar recorrência</DialogTitle>
+          </DialogHeader>
+          {editingRule && (
+            <RecurringRuleForm
+              defaultValues={{
+                description: editingRule.description,
+                amount: fromCents(editingRule.amountCents),
+                direction: editingRule.direction,
+                categoryId: editingRule.categoryId,
+                accountId: editingRule.accountId,
+                dayOfMonth: editingRule.dayOfMonth,
+                startMonth: editingRule.startMonth,
+                endMonth: editingRule.endMonth ?? "",
+              }}
+              submitLabel="Salvar alterações"
+              submitting={updateRule.isPending}
+              onSubmit={handleUpdate}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {isLoading && (
         <div className="grid gap-2">
@@ -115,6 +155,7 @@ export default function RecorrentesPage() {
                 <p className="text-muted-foreground text-xs">
                   {category?.name ?? "—"} · {account?.name ?? "—"} · dia {rule.dayOfMonth} · desde{" "}
                   {monthLabel(rule.startMonth)}
+                  {rule.endMonth && ` até ${monthLabel(rule.endMonth)}`}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -137,6 +178,9 @@ export default function RecorrentesPage() {
                       }
                     />
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditingRule(rule)}>
+                        Editar
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleDeactivate(rule.id)}>
                         Desativar
                       </DropdownMenuItem>
