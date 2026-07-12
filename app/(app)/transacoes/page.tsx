@@ -46,10 +46,9 @@ export default function TransacoesPage() {
   const [open, setOpen] = useState(false)
   const [transferOpen, setTransferOpen] = useState(false)
 
-  const sourceLabel = (tx: { origin: string; accountId?: string; cardId?: string }) => {
-    if (tx.origin === "card") return cards?.find((c) => c.id === tx.cardId)?.name ?? "—"
-    return accounts?.find((a) => a.id === tx.accountId)?.name ?? "—"
-  }
+  // visibleTx below never includes origin==='card' entries, so this only ever looks up accounts.
+  const sourceLabel = (tx: { accountId?: string }) =>
+    accounts?.find((a) => a.id === tx.accountId)?.name ?? "—"
 
   async function handleCreate(values: AccountTransactionFormValues) {
     const category = categories?.find((c) => c.id === values.categoryId)
@@ -83,6 +82,10 @@ export default function TransacoesPage() {
   }
 
   const allTx = transactions ?? []
+  // Card purchases are represented consolidated in the "Faturas do mês" card above —
+  // showing every individual purchase here too would duplicate that (and get noisy
+  // fast once imported faturas add many line items). Click into a fatura to see them.
+  const visibleTx = allTx.filter((t) => t.origin !== "card")
 
   const estimatedBalanceCents = useMemo(() => {
     const realBalance = accounts?.reduce((acc, a) => acc + a.currentBalanceCents, 0) ?? 0
@@ -187,14 +190,14 @@ export default function TransacoesPage() {
         </div>
       )}
 
-      {!isLoading && allTx.length === 0 && (
+      {!isLoading && visibleTx.length === 0 && (
         <p className="text-muted-foreground text-sm">
           Nenhum lançamento neste mês ainda.
         </p>
       )}
 
       <div className="grid gap-2">
-        {allTx.map((tx) => (
+        {visibleTx.map((tx) => (
           <TransactionListItem key={tx.id} tx={tx} accountName={sourceLabel(tx)} />
         ))}
       </div>
