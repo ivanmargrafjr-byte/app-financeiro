@@ -27,6 +27,7 @@ import { useCategories } from "@/lib/hooks/useCategories"
 import { flattenCategoryTree } from "@/lib/domain/categoryTree"
 import { useImportInvoiceLineItems } from "@/lib/hooks/useInvoices"
 import { toCents } from "@/lib/domain/money"
+import { cn } from "@/lib/utils"
 import type { Card as CardEntity, Invoice } from "@/lib/types"
 
 type DraftItem = {
@@ -121,13 +122,17 @@ export function ImportInvoiceDialog({
         toast.error("Nenhum lançamento encontrado nesse arquivo")
         return
       }
+      // Pre-fill every row with a sensible default category so the import button
+      // can enable right away — the user can still override any row individually.
+      const fallbackCategoryId = categories?.find((c) => c.type === "despesa")?.id ?? ""
+      setDefaultCategoryId(fallbackCategoryId)
       setItems(
         data.items.map((item, i) => ({
           id: `${i}-${Date.now()}`,
           description: item.description,
           amount: item.amount.toFixed(2),
           date: item.date ?? invoice.closingDate,
-          categoryId: "",
+          categoryId: fallbackCategoryId,
           installmentNumber: item.installmentNumber != null ? String(item.installmentNumber) : "",
           installmentTotal: item.installmentTotal != null ? String(item.installmentTotal) : "",
           included: true,
@@ -145,17 +150,17 @@ export function ImportInvoiceDialog({
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)))
   }
 
-  function applyDefaultCategoryToAll() {
-    if (!defaultCategoryId) return
-    setItems((prev) => prev.map((item) => ({ ...item, categoryId: defaultCategoryId })))
+  function handleDefaultCategoryChange(value: string) {
+    setDefaultCategoryId(value)
+    // Applies immediately to every row — no separate "apply" step to miss.
+    setItems((prev) => prev.map((item) => ({ ...item, categoryId: value })))
   }
 
   const includedItems = items.filter((i) => i.included)
-  const canImport =
-    includedItems.length > 0 &&
-    includedItems.every(
-      (i) => i.description.trim() && Number(i.amount) > 0 && i.date && i.categoryId
-    )
+  const invalidIncludedItems = includedItems.filter(
+    (i) => !i.description.trim() || !(Number(i.amount) > 0) || !i.date || !i.categoryId
+  )
+  const canImport = includedItems.length > 0 && invalidIncludedItems.length === 0
 
   async function handleImport() {
     if (!canImport) return
@@ -214,27 +219,13 @@ export function ImportInvoiceDialog({
           <>
             <div className="grid gap-2">
               <Label>Categoria padrão</Label>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <CategorySelect
-                    value={defaultCategoryId}
-                    onChange={setDefaultCategoryId}
-                    placeholder="Selecione uma categoria"
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!defaultCategoryId}
-                  onClick={applyDefaultCategoryToAll}
-                >
-                  Aplicar a todos
-                </Button>
-              </div>
+              <CategorySelect
+                value={defaultCategoryId}
+                onChange={handleDefaultCategoryChange}
+                placeholder="Selecione uma categoria"
+              />
               <p className="text-muted-foreground text-xs">
-                Escolha uma categoria e clique em &quot;Aplicar a todos&quot; para preencher a
-                lista rapidamente, depois ajuste linha a linha o que for diferente. Todo item
-                precisa de uma categoria antes de importar.
+                Aplicada a todos os itens abaixo — ajuste linha a linha o que for diferente.
               </p>
             </div>
 
@@ -265,7 +256,7 @@ export function ImportInvoiceDialog({
                       <Input
                         value={item.description}
                         onChange={(e) => updateItem(item.id, { description: e.target.value })}
-                        className="min-w-40"
+                        className={cn("min-w-40", !item.description.trim() && "border-destructive")}
                       />
                     </TableCell>
                     <TableCell>
@@ -274,7 +265,7 @@ export function ImportInvoiceDialog({
                         step="0.01"
                         value={item.amount}
                         onChange={(e) => updateItem(item.id, { amount: e.target.value })}
-                        className="w-24"
+                        className={cn("w-24", !(Number(item.amount) > 0) && "border-destructive")}
                       />
                     </TableCell>
                     <TableCell>
@@ -282,7 +273,7 @@ export function ImportInvoiceDialog({
                         type="date"
                         value={item.date}
                         onChange={(e) => updateItem(item.id, { date: e.target.value })}
-                        className="w-36"
+                        className={cn("w-36", !item.date && "border-destructive")}
                       />
                     </TableCell>
                     <TableCell>
@@ -309,7 +300,7 @@ export function ImportInvoiceDialog({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="w-44">
+                      <div className={cn("w-44 rounded-md", !item.categoryId && "ring-1 ring-destructive")}>
                         <CategorySelect
                           value={item.categoryId}
                           onChange={(v) => updateItem(item.id, { categoryId: v })}
@@ -331,6 +322,20 @@ export function ImportInvoiceDialog({
                 ? "Importando..."
                 : `Importar ${includedItems.length} lançamento${includedItems.length === 1 ? "" : "s"}`}
             </Button>
+            {includedItems.length === 0 && (
+              <p className="text-muted-foreground text-xs">
+                Marque ao menos um lançamento para importar.
+              </p>
+            )}
+            {includedItems.length > 0 && invalidIncludedItems.length > 0 && (
+              <p className="text-destructive text-xs">
+                {invalidIncludedItems.length} lançamento
+                {invalidIncludedItems.length === 1 ? "" : "s"} marcado
+                {invalidIncludedItems.length === 1 ? "" : "s"} com descrição, valor, data ou
+                categoria em falta (destacado{invalidIncludedItems.length === 1 ? "" : "s"} em
+                vermelho acima).
+              </p>
+            )}
           </>
         )}
       </DialogContent>
