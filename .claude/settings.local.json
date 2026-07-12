@@ -60,7 +60,16 @@
       "Bash(git config *)",
       "Bash(security find-internet-password *)",
       "Bash(brew --version)",
-      "Bash(brew install *)"
+      "Bash(brew install *)",
+      "Bash(gh repo *)",
+      "Bash(git push *)",
+      "Bash(ps -o pid,etime,command -p 13038)",
+      "Bash(kill 13038 13036)",
+      "Bash(ps -o pid,etime -p 15329)",
+      "Bash(kill 15329 15327)",
+      "Bash(vercel git *)",
+      "Bash(vercel teams *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\({k:v for k,v in d.items\\(\\) if 'token' not in k.lower\\(\\)}\\)\")"
     ]
   }
 }

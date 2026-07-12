@@ -34,7 +34,7 @@ import {
   resolveInvoiceCycleForPurchase,
 } from "@/lib/domain/invoiceCycle"
 import { buildInstallmentPlan, type InstallmentPlanItem } from "@/lib/domain/installments"
-import { todayDateString } from "@/lib/domain/dateUtils"
+import { addMonths, todayDateString } from "@/lib/domain/dateUtils"
 import { toCents } from "@/lib/domain/money"
 import { DEFAULT_ICON_NAME } from "@/lib/iconRegistry"
 import type { Card, Category, Invoice } from "@/lib/types"
@@ -540,6 +540,174 @@ export function useUpdateCardTransaction() {
           ...base,
           competenceMonth: competenceMonthForInvoice(dueDate),
           invoiceId: newInvoiceRef.id,
+        })
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      queryClient.invalidateQueries({ queryKey: ["invoice"] })
+      queryClient.invalidateQueries({ queryKey: ["transactions"] })
+    },
+  })
+}
+
+export type InvoiceImportItem = {
+  description: string
+  amountCents: number
+  date: string
+  category: Category
+  installmentNumber?: number
+  installmentTotal?: number
+}
+
+/**
+ * Bulk-imports line items read off a card statement into the invoice the user is
+ * viewing — each item becomes its own card transaction on that exact invoice, no
+ * cycle math involved for it (the statement itself tells us which month it landed
+ * on). When an item is an installment purchase (installmentNumber < installmentTotal),
+ * the *subsequent* installments are also created now, one per future invoice cycle
+ * (get-or-create, rolling forward one month per installment) — the earlier
+ * installments are left untouched since they're already booked on past invoices.
+ */
+export function useImportInvoiceLineItems() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      invoice,
+      card,
+      items,
+    }: {
+      invoice: Invoice
+      card: Card
+      items: InvoiceImportItem[]
+    }) => {
+      const uid = user!.uid
+      const currentInvoiceRef = invoiceDocRef(uid, invoice.id)
+      const currentCompetenceMonth = competenceMonthForInvoice(invoice.dueDate)
+
+      // Every remaining installment (across all parceled items) grouped by the
+      // future invoice it lands on — two different purchases can both roll into
+      // the same future month, so their invoice writes need to be combined.
+      type FutureGroup = {
+        referenceMonth: string
+        amountCents: number
+        docs: { item: InvoiceImportItem; installmentNumber: number }[]
+      }
+      const futureByInvoiceId = new Map<string, FutureGroup>()
+      for (const item of items) {
+        if (!item.installmentTotal || !item.installmentNumber) continue
+        for (let n = item.installmentNumber + 1; n <= item.installmentTotal; n++) {
+          const referenceMonth = addMonths(invoice.referenceMonth, n - item.installmentNumber)
+          const id = invoiceDocId(card.id, referenceMonth)
+          const group = futureByInvoiceId.get(id)
+          if (group) {
+            group.amountCents += item.amountCents
+            group.docs.push({ item, installmentNumber: n })
+          } else {
+            futureByInvoiceId.set(id, {
+              referenceMonth,
+              amountCents: item.amountCents,
+              docs: [{ item, installmentNumber: n }],
+            })
+          }
+        }
+      }
+
+      const futureInvoiceIds = Array.from(futureByInvoiceId.keys())
+      const futureInvoiceRefs = futureInvoiceIds.map((id) => invoiceDocRef(uid, id))
+
+      await runTransaction(db, async (trx) => {
+        const currentInvoiceSnap = await trx.get(currentInvoiceRef)
+        if (!currentInvoiceSnap.exists()) throw new Error("Fatura não encontrada")
+        if (currentInvoiceSnap.data()!.status === "paid") {
+          throw new Error("Não é possível importar lançamentos em uma fatura já paga")
+        }
+
+        const futureInvoiceSnaps = await Promise.all(futureInvoiceRefs.map((ref) => trx.get(ref)))
+        if (futureInvoiceSnaps.some((snap) => snap.exists() && snap.data()!.status === "paid")) {
+          throw new Error("Uma das parcelas futuras cairia em uma fatura já paga")
+        }
+
+        const currentTotalCents = items.reduce((acc, i) => acc + i.amountCents, 0)
+        trx.update(currentInvoiceRef, {
+          totalAmountCents: increment(currentTotalCents),
+          updatedAt: serverTimestamp(),
+        })
+
+        for (const item of items) {
+          const txRef = doc(transactionsCol(uid))
+          trx.set(txRef, {
+            origin: "card",
+            direction: "out",
+            amountCents: item.amountCents,
+            description: item.description,
+            categoryId: item.category.id,
+            categoryName: item.category.name,
+            categoryColor: item.category.color,
+            categoryIcon: item.category.icon,
+            categoryIconUrl: item.category.iconUrl ?? null,
+            date: item.date,
+            competenceMonth: currentCompetenceMonth,
+            cardId: card.id,
+            invoiceId: invoice.id,
+            ...(item.installmentTotal && item.installmentTotal > 1
+              ? { installmentNumber: item.installmentNumber, installmentTotal: item.installmentTotal }
+              : {}),
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          })
+        }
+
+        futureInvoiceIds.forEach((invoiceId, i) => {
+          const group = futureByInvoiceId.get(invoiceId)!
+          const ref = futureInvoiceRefs[i]
+          const snap = futureInvoiceSnaps[i]
+          const closingDate = computeClosingDate(group.referenceMonth, card.closingDay)
+          const dueDate = computeDueDate(group.referenceMonth, card.closingDay, card.dueDay)
+          const competenceMonth = competenceMonthForInvoice(dueDate)
+
+          if (!snap.exists()) {
+            trx.set(ref, {
+              cardId: card.id,
+              referenceMonth: group.referenceMonth,
+              closingDate,
+              dueDate,
+              totalAmountCents: group.amountCents,
+              status: "open",
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            })
+          } else {
+            trx.update(ref, {
+              totalAmountCents: increment(group.amountCents),
+              updatedAt: serverTimestamp(),
+            })
+          }
+
+          for (const { item, installmentNumber } of group.docs) {
+            const txRef = doc(transactionsCol(uid))
+            trx.set(txRef, {
+              origin: "card",
+              direction: "out",
+              amountCents: item.amountCents,
+              description: item.description,
+              categoryId: item.category.id,
+              categoryName: item.category.name,
+              categoryColor: item.category.color,
+              categoryIcon: item.category.icon,
+              categoryIconUrl: item.category.iconUrl ?? null,
+              date: item.date,
+              competenceMonth,
+              cardId: card.id,
+              invoiceId: ref.id,
+              installmentNumber,
+              installmentTotal: item.installmentTotal,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            })
+          }
         })
       })
     },

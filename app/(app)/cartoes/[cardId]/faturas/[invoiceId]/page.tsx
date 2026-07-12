@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { EditCardTransactionDialog } from "@/components/transactions/EditCardTransactionDialog"
+import { ImportInvoiceDialog } from "@/components/transactions/ImportInvoiceDialog"
 import { useCards } from "@/lib/hooks/useCards"
 import {
   useDeleteCardTransaction,
@@ -40,6 +41,7 @@ export default function InvoiceDetailPage({
   const deleteTransaction = useDeleteCardTransaction()
   const [paying, setPaying] = useState(false)
   const [editingTx, setEditingTx] = useState<Transaction | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
 
   const card = cards?.find((c) => c.id === cardId)
 
@@ -97,9 +99,14 @@ export default function InvoiceDetailPage({
               {invoice.status === "paid" ? "Paga" : "Aberta"}
             </Badge>
             {invoice.status === "open" && (
-              <Button onClick={handlePay} disabled={paying}>
-                {paying ? "Pagando..." : "Pagar fatura"}
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setImportOpen(true)}>
+                  Importar fatura
+                </Button>
+                <Button onClick={handlePay} disabled={paying}>
+                  {paying ? "Pagando..." : "Pagar fatura"}
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -166,6 +173,14 @@ export default function InvoiceDetailPage({
           tx={editingTx}
           open={!!editingTx}
           onOpenChange={(v) => !v && setEditingTx(null)}
+        />
+      )}
+      {invoice && card && (
+        <ImportInvoiceDialog
+          invoice={invoice}
+          card={card}
+          open={importOpen}
+          onOpenChange={setImportOpen}
         />
       )}
     </div>
