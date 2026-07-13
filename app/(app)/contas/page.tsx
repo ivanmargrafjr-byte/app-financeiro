@@ -22,6 +22,7 @@ import {
 import { AccountForm } from "@/components/forms/AccountForm"
 import { TransferForm } from "@/components/forms/TransferForm"
 import { EntityIcon } from "@/components/forms/EntityIcon"
+import { AdjustBalanceDialog } from "@/components/transactions/AdjustBalanceDialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatCentsBRL } from "@/lib/domain/money"
 import { ACCOUNT_TYPE_LABELS, type Account } from "@/lib/types"
@@ -43,6 +44,7 @@ export default function ContasPage() {
   const [open, setOpen] = useState(false)
   const [transferOpen, setTransferOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<Account | null>(null)
+  const [adjustingAccount, setAdjustingAccount] = useState<Account | null>(null)
 
   async function handleCreate(values: Parameters<typeof createAccount.mutateAsync>[0]) {
     try {
@@ -188,6 +190,9 @@ export default function ContasPage() {
                   <DropdownMenuItem onClick={() => setEditingAccount(account)}>
                     Editar
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setAdjustingAccount(account)}>
+                    Ajustar saldo
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleArchive(account.id)}>
                     Arquivar
                   </DropdownMenuItem>
@@ -205,6 +210,14 @@ export default function ContasPage() {
           </Card>
         ))}
       </div>
+
+      {adjustingAccount && (
+        <AdjustBalanceDialog
+          account={adjustingAccount}
+          open={!!adjustingAccount}
+          onOpenChange={(v) => !v && setAdjustingAccount(null)}
+        />
+      )}
     </div>
   )
 }

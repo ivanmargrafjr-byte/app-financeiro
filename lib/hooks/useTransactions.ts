@@ -20,8 +20,9 @@ import { monthOfDate } from "@/lib/domain/dateUtils"
 import { toCents } from "@/lib/domain/money"
 import { DEFAULT_ICON_NAME } from "@/lib/iconRegistry"
 import type { Account, Category, Transaction } from "@/lib/types"
-import { DEFAULT_CATEGORY_COLOR, TRANSFER_ICON_NAME } from "@/lib/types"
+import { BALANCE_ADJUSTMENT_ICON_NAME, DEFAULT_CATEGORY_COLOR, TRANSFER_ICON_NAME } from "@/lib/types"
 import type { AccountTransactionFormValues } from "@/lib/validators/transaction"
+import type { BalanceAdjustmentFormValues } from "@/lib/validators/balanceAdjustment"
 import type { TransferFormValues } from "@/lib/validators/transfer"
 
 function signedAmount(direction: "in" | "out", amountCents: number) {
@@ -406,6 +407,59 @@ export function useDeleteTransfer() {
           })
           trx.delete(legDoc.ref)
         }
+      })
+    },
+    onSuccess: () => invalidateTransactionQueries(queryClient, user?.uid),
+  })
+}
+
+/**
+ * Reconciles an account's balance to a value the user types in (e.g. matching their
+ * bank statement) by booking the difference as a single settled entry — a no-op if
+ * the typed balance already matches. Excluded from dashboard totals (see
+ * DashboardPage's summary filter) since it's a correction, not real income/expense;
+ * deleting it (via the regular lançamento dropdown) reverses the balance like any
+ * other settled account entry.
+ */
+export function useCreateBalanceAdjustment() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      account,
+      values,
+    }: {
+      account: Account
+      values: BalanceAdjustmentFormValues
+    }) => {
+      const newBalanceCents = toCents(values.newBalance)
+      const delta = newBalanceCents - account.currentBalanceCents
+      if (delta === 0) return
+
+      const uid = user!.uid
+      await runTransaction(db, async (trx) => {
+        trx.update(accountDocRef(uid, account.id), {
+          currentBalanceCents: increment(delta),
+          updatedAt: serverTimestamp(),
+        })
+        trx.set(doc(transactionsCol(uid)), {
+          origin: "adjustment",
+          direction: delta > 0 ? "in" : "out",
+          amountCents: Math.abs(delta),
+          description: values.description?.trim() || "Ajuste de saldo",
+          categoryId: "",
+          categoryName: "Ajuste de saldo",
+          categoryColor: DEFAULT_CATEGORY_COLOR,
+          categoryIcon: BALANCE_ADJUSTMENT_ICON_NAME,
+          categoryIconUrl: null,
+          date: values.date,
+          competenceMonth: monthOfDate(values.date),
+          accountId: account.id,
+          settled: true,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        })
       })
     },
     onSuccess: () => invalidateTransactionQueries(queryClient, user?.uid),

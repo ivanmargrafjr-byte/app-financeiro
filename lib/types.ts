@@ -45,7 +45,7 @@ export type Category = {
   parentId: string | null
 }
 
-export type TransactionOrigin = "account" | "card" | "transfer"
+export type TransactionOrigin = "account" | "card" | "transfer" | "adjustment"
 export type TransactionDirection = "in" | "out"
 
 export type Transaction = {
@@ -156,3 +156,4 @@ export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
 
 export const DEFAULT_CATEGORY_COLOR = "#64748b"
 export const TRANSFER_ICON_NAME = "ArrowLeftRight"
+export const BALANCE_ADJUSTMENT_ICON_NAME = "SlidersHorizontal"

@@ -45,10 +45,12 @@ export function TransactionListItem({
 
   const isCard = tx.origin === "card"
   const isTransfer = tx.origin === "transfer"
+  const isAdjustment = tx.origin === "adjustment"
   const paidViaCard = tx.settledVia === "card"
-  // Card purchases and transfers are already committed the moment they're created —
-  // there's no separate "efetivar" step for them, so treat them as settled for display.
-  const settled = isCard || isTransfer || tx.settled
+  // Card purchases, transfers and balance adjustments are already committed the
+  // moment they're created — there's no separate "efetivar" step for them, so
+  // treat them as settled for display.
+  const settled = isCard || isTransfer || isAdjustment || tx.settled
 
   // A checked account entry that was paid with a card keeps its original date/month
   // as a historical marker, but the real (totaled) charge lives on the invoice.
@@ -135,6 +137,11 @@ export function TransactionListItem({
             {isTransfer && (
               <Badge variant="secondary" className="text-xs">
                 Transferência
+              </Badge>
+            )}
+            {isAdjustment && (
+              <Badge variant="secondary" className="text-xs">
+                Ajuste de saldo
               </Badge>
             )}
             {!settled && (
