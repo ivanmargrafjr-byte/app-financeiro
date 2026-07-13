@@ -92,8 +92,14 @@ export default function TransacoesPage() {
     const pendingThisMonth = allTx
       .filter((t) => t.origin === "account" && !t.settled)
       .reduce((acc, t) => acc + (t.direction === "in" ? t.amountCents : -t.amountCents), 0)
-    return realBalance + pendingThisMonth
-  }, [accounts, allTx])
+    // Open invoices haven't debited any account balance yet (paying one does, via
+    // usePayInvoice) — subtract them so the estimate reflects the money already
+    // committed to this month's faturas.
+    const openInvoicesCents = (invoices ?? [])
+      .filter((invoice) => invoice.status === "open")
+      .reduce((acc, invoice) => acc + invoice.totalAmountCents, 0)
+    return realBalance + pendingThisMonth - openInvoicesCents
+  }, [accounts, allTx, invoices])
 
   return (
     <div className="grid gap-4">
@@ -144,7 +150,8 @@ export default function TransacoesPage() {
         <CardContent>
           <p className="text-2xl font-semibold">{formatCentsBRL(estimatedBalanceCents)}</p>
           <p className="text-muted-foreground text-xs">
-            Saldo atual das contas + lançamentos pendentes de {monthLabel(month).toLowerCase()}
+            Saldo atual das contas + lançamentos pendentes − faturas em aberto de{" "}
+            {monthLabel(month).toLowerCase()}
           </p>
         </CardContent>
       </Card>
