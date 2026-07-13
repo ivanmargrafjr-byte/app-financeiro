@@ -441,9 +441,16 @@ export function useReverseCardSettlement() {
 /**
  * Edits a single card-origin transaction line (description, category, amount, date).
  * Doesn't touch installmentGroupId/Number/Total — re-parceling isn't supported here.
- * If the new date resolves to a different invoice cycle, moves the doc between
- * invoices (creating the target invoice if needed). Blocked if either the current or
- * the target invoice is already paid.
+ *
+ * For a plain (non-installment) purchase, changing the date can resolve to a
+ * different invoice cycle, in which case the doc moves between invoices (creating
+ * the target invoice if needed). Installment lines are never moved this way, even
+ * if the date changes: which invoice a given parcela belongs to is fixed by the
+ * installment plan (or, for an imported line, by whichever fatura it was imported
+ * into) — the purchase date itself is informational and can legitimately be months
+ * away from the invoice's own cycle (e.g. parcela 10/10 of a Nov/2025 purchase
+ * correctly lives on the Aug/2026 invoice). Blocked if either the current or the
+ * target invoice is already paid.
  */
 export function useUpdateCardTransaction() {
   const { user } = useAuth()
@@ -477,9 +484,11 @@ export function useUpdateCardTransaction() {
           throw new Error("Não é possível editar um lançamento de uma fatura já paga")
         }
 
+        const isInstallment =
+          typeof original.installmentTotal === "number" && (original.installmentTotal as number) > 1
         const referenceMonth = resolveInvoiceCycleForPurchase(values.date, card)
         const newInvoiceId = invoiceDocId(card.id, referenceMonth)
-        const sameInvoice = newInvoiceId === original.invoiceId
+        const sameInvoice = isInstallment || newInvoiceId === original.invoiceId
 
         const base = {
           description: values.description,

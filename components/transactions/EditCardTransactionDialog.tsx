@@ -63,6 +63,7 @@ export function EditCardTransactionDialog({
             categoryId: tx.categoryId,
             date: tx.date,
           }}
+          isInstallment={!!tx.installmentTotal && tx.installmentTotal > 1}
           submitLabel="Salvar alterações"
           submitting={updateCardTransaction.isPending}
           onSubmit={handleSubmit}

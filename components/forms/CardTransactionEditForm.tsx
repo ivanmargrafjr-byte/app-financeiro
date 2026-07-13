@@ -31,11 +31,14 @@ import {
 
 export function CardTransactionEditForm({
   defaultValues,
+  isInstallment,
   submitLabel,
   submitting,
   onSubmit,
 }: {
   defaultValues: CardTransactionEditFormInput
+  /** Parcelas never move between invoices on edit — the hint below reflects that. */
+  isInstallment: boolean
   submitLabel: string
   submitting: boolean
   onSubmit: (values: CardTransactionEditFormValues) => void
@@ -130,8 +133,9 @@ export function CardTransactionEditForm({
           )}
         />
         <p className="text-muted-foreground text-xs">
-          Se a data mudar para fora do ciclo atual, o lançamento é movido para a fatura correta
-          automaticamente.
+          {isInstallment
+            ? "Por ser uma parcela, o lançamento continua nesta fatura mesmo que você mude a data — a data é só informativa."
+            : "Se a data mudar para fora do ciclo atual, o lançamento é movido para a fatura correta automaticamente."}
         </p>
         <Button type="submit" disabled={submitting} className="mt-2">
           {submitting ? "Salvando..." : submitLabel}
