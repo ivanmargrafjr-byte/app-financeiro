@@ -20,7 +20,7 @@ import { useCards } from "@/lib/hooks/useCards"
 import { useCategories } from "@/lib/hooks/useCategories"
 import { useCardInvoices, useCreateCardPurchase } from "@/lib/hooks/useInvoices"
 import { formatCentsBRL } from "@/lib/domain/money"
-import { monthLabel } from "@/lib/domain/dateUtils"
+import { monthLabel, monthOfDate } from "@/lib/domain/dateUtils"
 import type { CardPurchaseFormValues } from "@/lib/validators/cardPurchase"
 
 export default function CardDetailPage({
@@ -113,7 +113,9 @@ export default function CardDetailPage({
             className="border-border flex items-center justify-between rounded-md border px-3 py-3 hover:bg-accent"
           >
             <div>
-              <p className="text-sm font-medium capitalize">{monthLabel(invoice.referenceMonth)}</p>
+              <p className="text-sm font-medium capitalize">
+                {monthLabel(monthOfDate(invoice.dueDate))}
+              </p>
               <p className="text-muted-foreground text-xs">
                 Fecha {invoice.closingDate.split("-").reverse().join("/")} · Vence{" "}
                 {invoice.dueDate.split("-").reverse().join("/")}

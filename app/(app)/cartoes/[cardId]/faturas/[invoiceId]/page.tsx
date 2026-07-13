@@ -25,7 +25,7 @@ import {
   usePayInvoice,
 } from "@/lib/hooks/useInvoices"
 import { formatCentsBRL } from "@/lib/domain/money"
-import { monthLabel } from "@/lib/domain/dateUtils"
+import { monthLabel, monthOfDate } from "@/lib/domain/dateUtils"
 import type { Transaction } from "@/lib/types"
 
 export default function InvoiceDetailPage({
@@ -84,7 +84,7 @@ export default function InvoiceDetailPage({
           <div>
             <h1 className="flex items-center gap-2 text-xl font-semibold capitalize">
               {card && <EntityIcon name={card.icon} color={card.color} imageUrl={card.iconUrl} />}
-              {monthLabel(invoice.referenceMonth)}
+              {monthLabel(monthOfDate(invoice.dueDate))}
             </h1>
             <p className="text-muted-foreground text-sm">
               Fecha {invoice.closingDate.split("-").reverse().join("/")} · Vence{" "}
