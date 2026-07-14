@@ -69,7 +69,15 @@
       "Bash(kill 15329 15327)",
       "Bash(vercel git *)",
       "Bash(vercel teams *)",
-      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\({k:v for k,v in d.items\\(\\) if 'token' not in k.lower\\(\\)}\\)\")"
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\({k:v for k,v in d.items\\(\\) if 'token' not in k.lower\\(\\)}\\)\")",
+      "Bash(openssl rand *)",
+      "Bash(sed -i '' 's|^CRON_SECRET=$|CRON_SECRET=__CMDSUB_OUTPUT__|' /Users/ivan.margraf/app-financeiro/.env.local)",
+      "Bash(echo \"cron secret set \\(not displayed\\)\")",
+      "Bash(curl -s -w \"\\\\nHTTP_STATUS:%{http_code}\\\\n\" -H \"Authorization: Bearer wrong-secret\" http://localhost:3000/api/cron/daily-digest)",
+      "Bash(cp /tmp/test-resend.mjs ./test-resend.mjs.tmp)",
+      "Bash(node ./test-resend.mjs.tmp)",
+      "Bash(cp /tmp/test-resend.mjs ./_test_resend.mjs)",
+      "Bash(node ./_test_resend.mjs)"
     ]
   }
 }
