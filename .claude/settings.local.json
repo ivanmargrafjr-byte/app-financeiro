@@ -77,7 +77,18 @@
       "Bash(cp /tmp/test-resend.mjs ./test-resend.mjs.tmp)",
       "Bash(node ./test-resend.mjs.tmp)",
       "Bash(cp /tmp/test-resend.mjs ./_test_resend.mjs)",
-      "Bash(node ./_test_resend.mjs)"
+      "Bash(node ./_test_resend.mjs)",
+      "Bash(sips -g pixelWidth -g pixelHeight /Users/ivan.margraf/app-financeiro/app/icon.png)",
+      "Bash(mkdir -p /tmp/pwa-icons)",
+      "Bash(cp public/logo-mark.png /tmp/pwa-icons/mask-src.png)",
+      "Bash(sips -z 192 192 public/logo-mark.png --out public/icon-192.png)",
+      "Bash(sips -p 384 384 --padColor FFFFFF /tmp/pwa-icons/mask-src.png --out /tmp/pwa-icons/mask-padded.png)",
+      "Bash(sips -z 512 512 /tmp/pwa-icons/mask-padded.png --out public/icon-maskable-512.png)",
+      "Bash(sips -g pixelWidth -g pixelHeight public/icon-192.png public/icon-maskable-512.png)",
+      "Bash(curl -s https://finnancialapp.margraf.tec.br/manifest.webmanifest)",
+      "Bash(curl -s -o /dev/null -w \"/sw.js -> %{http_code}\\\\n\" https://finnancialapp.margraf.tec.br/sw.js)",
+      "Bash(curl -s -o /dev/null -w \"/icon-192.png -> %{http_code}\\\\n\" https://finnancialapp.margraf.tec.br/icon-192.png)",
+      "Bash(curl -s -o /dev/null -w \"/icon-maskable-512.png -> %{http_code}\\\\n\" https://finnancialapp.margraf.tec.br/icon-maskable-512.png)"
     ]
   }
 }
