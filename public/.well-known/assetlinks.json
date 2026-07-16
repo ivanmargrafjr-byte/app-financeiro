@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "br.tec.margraf.financas",
       "sha256_cert_fingerprints": [
-        "21:27:77:AF:52:83:E6:71:77:9D:82:9F:C0:48:50:1D:34:8D:EA:52:9C:2B:79:CC:E8:97:0E:DF:A8:1A:B7:9D"
+        "21:27:77:AF:52:83:E6:71:77:9D:82:9F:C0:48:50:1D:34:8D:EA:52:9C:2B:79:CC:E8:97:0E:DF:A8:1A:B7:9D",
+        "D6:53:9B:A3:CA:CD:8E:B4:8A:2C:F1:97:C6:EA:7C:C5:C6:04:96:A6:3F:E9:D1:04:96:22:4A:B0:DF:57:89:5F"
       ]
     }
   }
