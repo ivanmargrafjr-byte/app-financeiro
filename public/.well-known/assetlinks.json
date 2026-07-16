@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "br.tec.margraf.financas",
+      "sha256_cert_fingerprints": [
+        "21:27:77:AF:52:83:E6:71:77:9D:82:9F:C0:48:50:1D:34:8D:EA:52:9C:2B:79:CC:E8:97:0E:DF:A8:1A:B7:9D"
+      ]
+    }
+  }
+]

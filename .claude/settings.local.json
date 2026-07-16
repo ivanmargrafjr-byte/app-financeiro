@@ -88,7 +88,26 @@
       "Bash(curl -s https://finnancialapp.margraf.tec.br/manifest.webmanifest)",
       "Bash(curl -s -o /dev/null -w \"/sw.js -> %{http_code}\\\\n\" https://finnancialapp.margraf.tec.br/sw.js)",
       "Bash(curl -s -o /dev/null -w \"/icon-192.png -> %{http_code}\\\\n\" https://finnancialapp.margraf.tec.br/icon-192.png)",
-      "Bash(curl -s -o /dev/null -w \"/icon-maskable-512.png -> %{http_code}\\\\n\" https://finnancialapp.margraf.tec.br/icon-maskable-512.png)"
+      "Bash(curl -s -o /dev/null -w \"/icon-maskable-512.png -> %{http_code}\\\\n\" https://finnancialapp.margraf.tec.br/icon-maskable-512.png)",
+      "Bash(java -version)",
+      "Bash(npx --yes @bubblewrap/cli --version)",
+      "Bash(/usr/libexec/java_home -v 17)",
+      "Bash(npx --yes @bubblewrap/cli doctor)",
+      "Bash(find /Users/ivan.margraf/.npm/_npx -path *bubblewrap* -iname *.js)",
+      "Bash(xargs cat)",
+      "Bash(ls \"/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home\" | head -20 *)",
+      "Bash(sed -i '' 's#\"jdkPath\":\"/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home\"#\"jdkPath\":\"/Library/Java/JavaVirtualMachines/temurin-17.jdk\"#' ~/.bubblewrap/config.json *)",
+      "Bash(yes)",
+      "Bash(~/Library/Android/sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=/Users/ivan.margraf/Library/Android/sdk --licenses)",
+      "Bash(npx --yes @bubblewrap/cli init --help)",
+      "Bash(npx --yes @bubblewrap/cli --help)",
+      "Bash(xargs sed -n '1,120p')",
+      "Bash(mkdir -p ~/app-financeiro-android)",
+      "Bash(npm init *)",
+      "Bash(node init-twa.mjs)",
+      "Bash(~/Library/Android/sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=/Users/ivan.margraf/Library/Android/sdk 'build-tools;34.0.0')",
+      "Bash(shasum -a 1 twa-manifest.json)",
+      "Bash(awk '{print $1}')"
     ]
   }
 }
