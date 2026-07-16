@@ -1,7 +1,16 @@
 import { doc, serverTimestamp, writeBatch } from "firebase/firestore"
 import { db } from "./client"
 import { categoriesCol, userDocRef } from "./paths"
-import type { CategoryType } from "@/lib/types"
+import type { CategoryType, SubscriptionStatus } from "@/lib/types"
+
+const EXEMPT_EMAILS = (process.env.NEXT_PUBLIC_EXEMPT_EMAILS ?? "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean)
+
+function initialSubscriptionStatus(email: string | null): SubscriptionStatus {
+  return email && EXEMPT_EMAILS.includes(email.toLowerCase()) ? "exempt" : "none"
+}
 
 const DEFAULT_CATEGORIES: { name: string; type: CategoryType; icon: string; color: string }[] = [
   { name: "Salário", type: "receita", icon: "Wallet", color: "#16a34a" },
@@ -25,6 +34,7 @@ export async function seedNewUser(uid: string, email: string | null, displayName
     displayName,
     createdAt: serverTimestamp(),
     onboarded: true,
+    subscriptionStatus: initialSubscriptionStatus(email),
   })
 
   const categoriesRef = categoriesCol(uid)

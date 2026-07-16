@@ -21,7 +21,11 @@ export default function PrivacyPolicyPage() {
             Finanças é um aplicativo de controle financeiro pessoal, usado para registrar
             contas bancárias, cartões de crédito, transações, categorias e recorrências. Esta
             política explica quais dados o aplicativo coleta, como são usados e com quem podem
-            ser compartilhados.
+            ser compartilhados. Veja também os{" "}
+            <Link href="/termos" className="underline">
+              Termos de Uso
+            </Link>
+            .
           </p>
         </section>
 
@@ -46,6 +50,12 @@ export default function PrivacyPolicyPage() {
             <li>
               <strong>Ícones personalizados:</strong> imagens que você escolhe enviar para
               identificar contas, cartões ou categorias.
+            </li>
+            <li>
+              <strong>Dados de pagamento da assinatura:</strong> ao assinar, os dados do seu
+              cartão são inseridos diretamente na página segura do Stripe — não temos acesso ao
+              número do cartão. Recebemos apenas a confirmação do pagamento e o status da
+              assinatura.
             </li>
           </ul>
           <p className="mt-2">
@@ -88,6 +98,11 @@ export default function PrivacyPolicyPage() {
             </li>
             <li>
               <strong>Resend</strong> — envia o e-mail diário de pendências, quando configurado.
+            </li>
+            <li>
+              <strong>Stripe</strong> — processa o pagamento da assinatura mensal. O Stripe é
+              certificado PCI-DSS nível 1 (o mais alto padrão de segurança para processamento de
+              cartões); não armazenamos nem temos acesso aos dados do seu cartão.
             </li>
             <li>
               <strong>Vercel</strong> — hospeda a aplicação web.

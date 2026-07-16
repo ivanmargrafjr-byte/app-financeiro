@@ -148,6 +148,25 @@ export type Contract = {
   updatedAt: number
 }
 
+export type SubscriptionStatus =
+  | "exempt"
+  | "trialing"
+  | "active"
+  | "past_due"
+  | "canceled"
+  | "none"
+
+export type UserProfile = {
+  email: string | null
+  displayName: string | null
+  subscriptionStatus: SubscriptionStatus
+  stripeCustomerId?: string
+  stripeSubscriptionId?: string
+}
+
+/** Statuses that grant access to the app. */
+export const ACTIVE_SUBSCRIPTION_STATUSES: SubscriptionStatus[] = ["exempt", "trialing", "active"]
+
 export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   corrente: "Conta corrente",
   poupanca: "Poupança",

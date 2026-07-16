@@ -8,8 +8,14 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read, update: if isOwner(userId);
+      allow read: if isOwner(userId);
       allow create: if isOwner(userId);
+      // Subscription fields are only ever written by the Stripe webhook, which uses
+      // Admin SDK credentials and bypasses these rules entirely — block the client
+      // from setting its own billing status directly.
+      allow update: if isOwner(userId)
+                     && !request.resource.data.diff(resource.data).affectedKeys()
+                          .hasAny(['subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId']);
 
       match /accounts/{accountId} {
         allow read, write: if isOwner(userId);
