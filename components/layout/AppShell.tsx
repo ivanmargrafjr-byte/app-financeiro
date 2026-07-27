@@ -10,6 +10,7 @@ import {
   ListTree,
   LogOut,
   Repeat,
+  Shield,
   Tag,
   Wallet,
 } from "lucide-react"
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth/AuthProvider"
 import { useMonth } from "@/lib/month/MonthProvider"
 import { useEnsureRecurringGenerated } from "@/lib/hooks/useRecurringRules"
+import { isAdminEmail } from "@/lib/admin/isAdmin"
 import { Button } from "@/components/ui/button"
 import { MonthSwitcher } from "@/components/layout/MonthSwitcher"
 
@@ -38,6 +40,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth()
   const { month } = useMonth()
   useEnsureRecurringGenerated(month)
+  const navItems = isAdminEmail(user?.email)
+    ? [...NAV_ITEMS, { href: "/admin", label: "Admin", icon: Shield }]
+    : NAV_ITEMS
 
   async function handleSignOut() {
     await signOut()
@@ -52,7 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           Finanças
         </div>
         <nav className="flex flex-1 flex-row gap-1 overflow-x-auto md:flex-col md:overflow-visible">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const active = pathname.startsWith(item.href)
             const Icon = item.icon
             return (
