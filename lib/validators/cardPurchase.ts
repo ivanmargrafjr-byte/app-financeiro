@@ -6,6 +6,7 @@ export const cardPurchaseSchema = z.object({
   categoryId: z.string().min(1, "Selecione uma categoria"),
   date: z.string().min(1, "Informe a data"),
   installmentTotal: z.coerce.number().int().min(1, "Mínimo 1x").max(48, "Máximo 48x"),
+  interestAmount: z.coerce.number().min(0, "Não pode ser negativo").default(0),
 })
 export type CardPurchaseFormValues = z.output<typeof cardPurchaseSchema>
 export type CardPurchaseFormInput = z.input<typeof cardPurchaseSchema>

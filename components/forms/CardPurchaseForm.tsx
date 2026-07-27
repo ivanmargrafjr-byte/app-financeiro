@@ -27,6 +27,7 @@ import { EntityIcon } from "@/components/forms/EntityIcon"
 import { useCategories } from "@/lib/hooks/useCategories"
 import { flattenCategoryTree } from "@/lib/domain/categoryTree"
 import { todayDateString } from "@/lib/domain/dateUtils"
+import { formatCentsBRL, splitCents, toCents } from "@/lib/domain/money"
 import {
   cardPurchaseSchema,
   type CardPurchaseFormInput,
@@ -61,8 +62,13 @@ export function CardPurchaseForm({
       categoryId: "",
       date: todayDateString(),
       installmentTotal: 1,
+      interestAmount: 0,
     },
   })
+  const amount = form.watch("amount")
+  const installmentTotal = form.watch("installmentTotal")
+  const interestAmount = form.watch("interestAmount")
+  const isInstallment = Number(installmentTotal) > 1
 
   async function handleReceiptChange(selected: File | undefined) {
     if (!selected) return
@@ -142,25 +148,60 @@ export function CardPurchaseForm({
             )}
           />
         </div>
-        <FormField
-          control={form.control}
-          name="installmentTotal"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Parcelas</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min={1}
-                  max={48}
-                  {...field}
-                  value={field.value as number | string}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+        <div className={isInstallment ? "grid grid-cols-2 gap-4" : undefined}>
+          <FormField
+            control={form.control}
+            name="installmentTotal"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Parcelas</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={48}
+                    {...field}
+                    value={field.value as number | string}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {isInstallment && (
+            <FormField
+              control={form.control}
+              name="interestAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Juros total (R$)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      {...field}
+                      value={field.value as number | string}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
-        />
+        </div>
+        {isInstallment && Number(amount) > 0 && (
+          <p className="text-muted-foreground text-xs">
+            Total com juros: {formatCentsBRL(toCents(Number(amount)) + toCents(Number(interestAmount) || 0))}{" "}
+            — {Number(installmentTotal)}x de{" "}
+            {formatCentsBRL(
+              splitCents(
+                toCents(Number(amount)) + toCents(Number(interestAmount) || 0),
+                Number(installmentTotal)
+              )[0]
+            )}
+          </p>
+        )}
         <FormField
           control={form.control}
           name="categoryId"

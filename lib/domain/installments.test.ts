@@ -47,6 +47,19 @@ describe("buildInstallmentPlan", () => {
     expect(() => buildInstallmentPlan(1000, 0, "2026-07-10", card)).toThrow()
   })
 
+  it("adds interest to the principal before splitting across installments", () => {
+    const plan = buildInstallmentPlan(100000, 3, "2026-07-10", card, 10000) // R$ 1000 + R$ 100 juros / 3x
+    const sum = plan.reduce((acc, p) => acc + p.amountCents, 0)
+    expect(sum).toBe(110000)
+    expect(plan.map((p) => p.amountCents)).toEqual([36667, 36667, 36666])
+  })
+
+  it("defaults to zero interest when omitted, matching the no-interest split", () => {
+    const withDefault = buildInstallmentPlan(100000, 3, "2026-07-10", card)
+    const withExplicitZero = buildInstallmentPlan(100000, 3, "2026-07-10", card, 0)
+    expect(withDefault).toEqual(withExplicitZero)
+  })
+
   it("handles a single (à vista) installment", () => {
     const plan = buildInstallmentPlan(5000, 1, "2026-07-10", card)
     expect(plan).toEqual([

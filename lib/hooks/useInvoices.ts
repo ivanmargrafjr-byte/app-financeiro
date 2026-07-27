@@ -238,7 +238,14 @@ export function useCreateCardPurchase() {
       category: Category
     }) => {
       const totalCents = toCents(values.amount)
-      const plan = buildInstallmentPlan(totalCents, values.installmentTotal, values.date, card)
+      const interestCents = toCents(values.interestAmount)
+      const plan = buildInstallmentPlan(
+        totalCents,
+        values.installmentTotal,
+        values.date,
+        card,
+        interestCents
+      )
       const installmentGroupId = plan.length > 1 ? uuidv4() : undefined
 
       const invoiceRefs = plan.map((item) =>
