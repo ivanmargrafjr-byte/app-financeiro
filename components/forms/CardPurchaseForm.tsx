@@ -148,7 +148,7 @@ export function CardPurchaseForm({
             )}
           />
         </div>
-        <div className={isInstallment ? "grid grid-cols-2 gap-4" : undefined}>
+        <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="installmentTotal"
