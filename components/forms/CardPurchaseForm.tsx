@@ -162,6 +162,7 @@ export function CardPurchaseForm({
                     pattern="[0-9]*"
                     {...field}
                     value={field.value as number | string}
+                    onFocus={(e) => e.currentTarget.select()}
                   />
                 </FormControl>
                 <FormMessage />
@@ -181,6 +182,7 @@ export function CardPurchaseForm({
                       inputMode="decimal"
                       {...field}
                       value={field.value as number | string}
+                      onFocus={(e) => e.currentTarget.select()}
                     />
                   </FormControl>
                   <FormMessage />
