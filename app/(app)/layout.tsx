@@ -15,7 +15,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { data: profile, isLoading: profileLoading } = useUserProfile()
   const router = useRouter()
 
-  const hasAccess = !!profile && ACTIVE_SUBSCRIPTION_STATUSES.includes(profile.subscriptionStatus)
+  const paywallDisabled = process.env.NEXT_PUBLIC_DISABLE_PAYWALL === "true"
+  const hasAccess =
+    paywallDisabled || (!!profile && ACTIVE_SUBSCRIPTION_STATUSES.includes(profile.subscriptionStatus))
 
   useEffect(() => {
     if (loading || profileLoading) return
