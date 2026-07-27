@@ -1,6 +1,6 @@
 import { getApps, initializeApp, type FirebaseOptions } from "firebase/app"
 import { getAuth } from "firebase/auth"
-import { getFirestore } from "firebase/firestore"
+import { initializeFirestore } from "firebase/firestore"
 import { getStorage } from "firebase/storage"
 
 const firebaseConfig: FirebaseOptions = {
@@ -16,5 +16,11 @@ export const firebaseApp =
   getApps().length > 0 ? getApps()[0]! : initializeApp(firebaseConfig)
 
 export const auth = getAuth(firebaseApp)
-export const db = getFirestore(firebaseApp)
+// Firestore's default WebChannel streaming transport fails inside iOS WKWebView
+// (Capacitor's remote-server mode) with "Listen" RPC connection errors — auto-detecting
+// long polling falls back to a transport that actually works there, at no cost on
+// browsers/Android where streaming works fine.
+export const db = initializeFirestore(firebaseApp, {
+  experimentalAutoDetectLongPolling: true,
+})
 export const storage = getStorage(firebaseApp)
