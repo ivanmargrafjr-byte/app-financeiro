@@ -117,7 +117,7 @@ export function TransactionListItem({
       <div className="flex min-w-0 items-center gap-3">
         <EntityIcon name={tx.categoryIcon} color={tx.categoryColor} imageUrl={tx.categoryIconUrl} />
         <div className="min-w-0">
-          <p className="flex items-center gap-2 text-sm font-medium">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
             <span className="min-w-0 truncate">{tx.description}</span>
             {tx.recurringSeriesId && (
               <Badge variant="secondary" className="shrink-0 text-xs">
