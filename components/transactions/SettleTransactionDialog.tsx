@@ -27,6 +27,13 @@ import { useSettleTransactionViaCard } from "@/lib/hooks/useInvoices"
 import { monthLabel } from "@/lib/domain/dateUtils"
 import type { Transaction } from "@/lib/types"
 
+function clampInstallmentTotal(raw: string) {
+  const n = Math.trunc(Number(raw))
+  if (!Number.isFinite(n) || n < 1) return 1
+  if (n > 48) return 48
+  return n
+}
+
 export function SettleTransactionDialog({
   tx,
   open,
@@ -44,7 +51,8 @@ export function SettleTransactionDialog({
   const [method, setMethod] = useState<"account" | "card">("account")
   const [accountId, setAccountId] = useState(tx.accountId ?? "")
   const [cardId, setCardId] = useState("")
-  const [installmentTotal, setInstallmentTotal] = useState(1)
+  const [installmentTotal, setInstallmentTotal] = useState("1")
+  const [interestAmount, setInterestAmount] = useState("0")
 
   const submitting = settleViaAccount.isPending || settleViaCard.isPending
   const canPayWithCard = tx.direction === "out"
@@ -64,17 +72,20 @@ export function SettleTransactionDialog({
           toast.error("Selecione um cartão")
           return
         }
+        const installmentTotalNumber = clampInstallmentTotal(installmentTotal)
+        const interestAmountNumber = Number(interestAmount) || 0
         const { competenceMonths } = await settleViaCard.mutateAsync({
           transactionId: tx.id,
           card,
-          installmentTotal,
+          installmentTotal: installmentTotalNumber,
+          interestAmount: interestAmountNumber,
         })
 
         // The original entry stays put (checked) — only the resulting invoice
         // charge(s) live in the due month, so just let the user know where.
         const firstMonth = competenceMonths[0]
         toast.success(
-          installmentTotal > 1
+          installmentTotalNumber > 1
             ? `Lançamento efetivado — parcelas na fatura a partir de ${monthLabel(firstMonth)}`
             : `Lançamento efetivado — foi para a fatura de ${monthLabel(firstMonth)}`
         )
@@ -111,6 +122,8 @@ export function SettleTransactionDialog({
                 setCardId={setCardId}
                 installmentTotal={installmentTotal}
                 setInstallmentTotal={setInstallmentTotal}
+                interestAmount={interestAmount}
+                setInterestAmount={setInterestAmount}
                 cards={cards}
               />
             </TabsContent>
@@ -164,14 +177,20 @@ function CardFields({
   setCardId,
   installmentTotal,
   setInstallmentTotal,
+  interestAmount,
+  setInterestAmount,
   cards,
 }: {
   cardId: string
   setCardId: (id: string) => void
-  installmentTotal: number
-  setInstallmentTotal: (n: number) => void
+  installmentTotal: string
+  setInstallmentTotal: (v: string) => void
+  interestAmount: string
+  setInterestAmount: (v: string) => void
   cards: ReturnType<typeof useCards>["data"]
 }) {
+  const isInstallment = Number(installmentTotal) > 1
+
   return (
     <>
       <div className="grid gap-2">
@@ -191,15 +210,30 @@ function CardFields({
           </SelectContent>
         </Select>
       </div>
-      <div className="grid gap-2">
-        <Label>Parcelas</Label>
-        <Input
-          type="number"
-          min={1}
-          max={48}
-          value={installmentTotal}
-          onChange={(e) => setInstallmentTotal(Number(e.target.value) || 1)}
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-2">
+          <Label>Parcelas</Label>
+          <Input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={installmentTotal}
+            onChange={(e) => setInstallmentTotal(e.target.value)}
+            onFocus={(e) => e.currentTarget.select()}
+          />
+        </div>
+        {isInstallment && (
+          <div className="grid gap-2">
+            <Label>Juros total (R$)</Label>
+            <Input
+              type="text"
+              inputMode="decimal"
+              value={interestAmount}
+              onChange={(e) => setInterestAmount(e.target.value)}
+              onFocus={(e) => e.currentTarget.select()}
+            />
+          </div>
+        )}
       </div>
     </>
   )

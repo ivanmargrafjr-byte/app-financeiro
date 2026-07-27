@@ -293,10 +293,12 @@ export function useSettleTransactionViaCard() {
       transactionId,
       card,
       installmentTotal,
+      interestAmount = 0,
     }: {
       transactionId: string
       card: Card
       installmentTotal: number
+      interestAmount?: number
     }) => {
       const uid = user!.uid
       const originalRef = transactionDocRef(uid, transactionId)
@@ -314,7 +316,8 @@ export function useSettleTransactionViaCard() {
 
         const totalCents = original.amountCents as number
         const purchaseDate = original.date as string
-        const plan = buildInstallmentPlan(totalCents, installmentTotal, purchaseDate, card)
+        const interestCents = toCents(interestAmount)
+        const plan = buildInstallmentPlan(totalCents, installmentTotal, purchaseDate, card, interestCents)
         const installmentGroupId = plan.length > 1 ? uuidv4() : undefined
 
         const invoiceRefs = plan.map((item) =>
