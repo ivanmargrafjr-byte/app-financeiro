@@ -71,7 +71,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-1 gap-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <Card>
           <CardHeader>
@@ -141,7 +141,7 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="text-base font-medium">Detalhe por categoria</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-2">
+          <CardContent className="grid grid-cols-1 gap-2">
             {summary.porCategoria.map((c) => (
               <div key={c.categoryId} className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2">

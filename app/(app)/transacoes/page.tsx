@@ -102,8 +102,8 @@ export default function TransacoesPage() {
   }, [accounts, allTx, invoices])
 
   return (
-    <div className="grid gap-4">
-      <div className="flex items-center justify-between">
+    <div className="grid grid-cols-1 gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">Transações</h1>
         <div className="flex gap-2">
           <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
@@ -161,7 +161,7 @@ export default function TransacoesPage() {
           <CardHeader>
             <CardTitle className="text-base font-medium">Faturas do mês</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-2">
+          <CardContent className="grid grid-cols-1 gap-2">
             {invoices.map((invoice) => {
               const card = cards?.find((c) => c.id === invoice.cardId)
               return (
@@ -190,7 +190,7 @@ export default function TransacoesPage() {
       )}
 
       {isLoading && (
-        <div className="grid gap-2">
+        <div className="grid grid-cols-1 gap-2">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-12" />
           ))}
@@ -203,7 +203,7 @@ export default function TransacoesPage() {
         </p>
       )}
 
-      <div className="grid gap-2">
+      <div className="grid grid-cols-1 gap-2">
         {visibleTx.map((tx) => (
           <TransactionListItem key={tx.id} tx={tx} accountName={sourceLabel(tx)} />
         ))}

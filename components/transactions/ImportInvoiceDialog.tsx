@@ -201,7 +201,7 @@ export function ImportInvoiceDialog({
           <DialogTitle>Importar fatura</DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-2">
+        <div className="grid grid-cols-1 gap-2">
           <Label>Arquivo da fatura (PDF ou imagem)</Label>
           <Input
             type="file"
@@ -217,7 +217,7 @@ export function ImportInvoiceDialog({
 
         {items.length > 0 && (
           <>
-            <div className="grid gap-2">
+            <div className="grid grid-cols-1 gap-2">
               <Label>Categoria padrão</Label>
               <CategorySelect
                 value={defaultCategoryId}

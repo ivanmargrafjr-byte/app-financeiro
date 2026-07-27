@@ -14,7 +14,7 @@ export default function PrivacyPolicyPage() {
       <h1 className="mt-6 text-2xl font-semibold">Política de Privacidade</h1>
       <p className="text-muted-foreground mt-1 mb-8 text-xs">Última atualização: julho de 2026</p>
 
-      <div className="grid gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <section>
           <h2 className="mb-2 text-base font-semibold">1. Sobre este aplicativo</h2>
           <p>

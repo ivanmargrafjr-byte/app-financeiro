@@ -46,7 +46,7 @@ export function AdjustBalanceForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4">
         <p className="text-muted-foreground text-sm">
           Saldo atual: <span className="text-foreground font-medium">{formatCentsBRL(currentBalanceCents)}</span>
         </p>

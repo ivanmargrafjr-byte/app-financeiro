@@ -93,8 +93,8 @@ export default function ContasPage() {
   }
 
   return (
-    <div className="grid gap-4">
-      <div className="flex items-center justify-between">
+    <div className="grid grid-cols-1 gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">Contas</h1>
         <div className="flex gap-2">
           <Dialog open={transferOpen} onOpenChange={setTransferOpen}>

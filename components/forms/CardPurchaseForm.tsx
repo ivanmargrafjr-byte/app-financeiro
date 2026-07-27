@@ -93,8 +93,8 @@ export function CardPurchaseForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-        <div className="grid gap-2">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-2">
           <Label>Ler recibo (opcional)</Label>
           <Input
             type="file"

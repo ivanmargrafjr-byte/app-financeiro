@@ -68,7 +68,7 @@ export default function InvoiceDetailPage({
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-1 gap-4">
       <Link
         href={`/cartoes/${cardId}`}
         className="text-muted-foreground flex items-center gap-1 text-sm hover:underline"
@@ -80,7 +80,7 @@ export default function InvoiceDetailPage({
       {isLoading && <Skeleton className="h-20" />}
 
       {invoice && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h1 className="flex items-center gap-2 text-xl font-semibold capitalize">
               {card && <EntityIcon name={card.icon} color={card.color} imageUrl={card.iconUrl} />}
@@ -113,36 +113,36 @@ export default function InvoiceDetailPage({
       )}
 
       {isLoadingTx && (
-        <div className="grid gap-2">
+        <div className="grid grid-cols-1 gap-2">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-12" />
           ))}
         </div>
       )}
 
-      <div className="grid gap-2">
+      <div className="grid grid-cols-1 gap-2">
         {transactions?.map((tx) => (
           <div
             key={tx.id}
-            className="border-border flex items-center justify-between rounded-md border px-3 py-2"
+            className="border-border flex items-center justify-between gap-2 rounded-md border px-3 py-2"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <EntityIcon name={tx.categoryIcon} color={tx.categoryColor} imageUrl={tx.categoryIconUrl} />
-              <div>
+              <div className="min-w-0">
                 <p className="flex items-center gap-2 text-sm font-medium">
-                  {tx.description}
+                  <span className="min-w-0 truncate">{tx.description}</span>
                   {tx.installmentTotal && tx.installmentTotal > 1 && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="shrink-0 text-xs">
                       {tx.installmentNumber}/{tx.installmentTotal}
                     </Badge>
                   )}
                 </p>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-muted-foreground truncate text-xs">
                   {tx.categoryName} · {tx.date.split("-").reverse().join("/")}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <span className="text-sm font-medium">{formatCentsBRL(tx.amountCents)}</span>
               {invoice?.status === "open" && (
                 <DropdownMenu>

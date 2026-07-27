@@ -43,8 +43,8 @@ export default function ContratosPage() {
   }
 
   return (
-    <div className="grid gap-4">
-      <div className="flex items-center justify-between">
+    <div className="grid grid-cols-1 gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">Contratos</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <Button onClick={() => setOpen(true)}>
@@ -88,7 +88,7 @@ export default function ContratosPage() {
                   {contract.number}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="grid gap-1">
+              <CardContent className="grid grid-cols-1 gap-1">
                 <p className="text-sm">
                   {contract.contractor} → {contract.contractee}
                 </p>

@@ -54,7 +54,7 @@ export function CardTransactionEditForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4">
         <FormField
           control={form.control}
           name="description"

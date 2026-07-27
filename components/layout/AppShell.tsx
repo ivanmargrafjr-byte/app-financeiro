@@ -85,14 +85,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Button>
         </div>
       </aside>
-      <div className="flex flex-1 flex-col">
-        <header className="border-border flex items-center justify-between border-b p-4">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="border-border flex flex-wrap items-center justify-between gap-2 border-b p-4">
           <MonthSwitcher />
           <Button variant="ghost" size="sm" className="md:hidden" onClick={handleSignOut}>
             <LogOut className="size-4" />
           </Button>
         </header>
-        <main className="flex-1 p-4">{children}</main>
+        <main className="min-w-0 flex-1 p-4">{children}</main>
       </div>
     </div>
   )

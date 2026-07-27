@@ -70,7 +70,7 @@ export default function ContractDetailPage({
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-1 gap-4">
       <Link
         href="/contratos"
         className="text-muted-foreground flex items-center gap-1 text-sm hover:underline"
@@ -87,7 +87,7 @@ export default function ContractDetailPage({
 
       {contract && (
         <>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h1 className="text-xl font-semibold">Contrato {contract.number}</h1>
             <DropdownMenu>
               <DropdownMenuTrigger

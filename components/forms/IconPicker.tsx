@@ -50,7 +50,7 @@ export function IconPicker({
   }
 
   return (
-    <div className="grid gap-2">
+    <div className="grid grid-cols-1 gap-2">
       <div className="flex items-center gap-3">
         <div className="border-border flex size-10 items-center justify-center overflow-hidden rounded-md border">
           {imageUrl ? (

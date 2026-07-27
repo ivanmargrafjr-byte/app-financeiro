@@ -113,50 +113,50 @@ export function TransactionListItem({
   }
 
   return (
-    <div className="border-border flex items-center justify-between rounded-md border px-3 py-2">
-      <div className="flex items-center gap-3">
+    <div className="border-border flex items-center justify-between gap-2 rounded-md border px-3 py-2">
+      <div className="flex min-w-0 items-center gap-3">
         <EntityIcon name={tx.categoryIcon} color={tx.categoryColor} imageUrl={tx.categoryIconUrl} />
-        <div>
+        <div className="min-w-0">
           <p className="flex items-center gap-2 text-sm font-medium">
-            {tx.description}
+            <span className="min-w-0 truncate">{tx.description}</span>
             {tx.recurringSeriesId && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="shrink-0 text-xs">
                 Recorrente
               </Badge>
             )}
             {tx.installmentTotal && tx.installmentTotal > 1 && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="shrink-0 text-xs">
                 {tx.installmentNumber}/{tx.installmentTotal}
               </Badge>
             )}
             {paidViaCard && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="shrink-0 text-xs">
                 Pago no cartão
               </Badge>
             )}
             {isTransfer && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="shrink-0 text-xs">
                 Transferência
               </Badge>
             )}
             {isAdjustment && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="shrink-0 text-xs">
                 Ajuste de saldo
               </Badge>
             )}
             {!settled && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="shrink-0 text-xs">
                 Pendente
               </Badge>
             )}
           </p>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground truncate text-xs">
             {tx.categoryName}
             {accountName && ` · ${accountName}`} · {tx.date.split("-").reverse().join("/")}
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {settled && (
           <CheckCircle2 className="text-emerald-600 size-4" aria-label="Efetivada" />
         )}

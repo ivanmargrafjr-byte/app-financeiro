@@ -53,7 +53,7 @@ export default function CardDetailPage({
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-1 gap-4">
       <Link
         href="/cartoes"
         className="text-muted-foreground flex items-center gap-1 text-sm hover:underline"
@@ -62,7 +62,7 @@ export default function CardDetailPage({
         Cartões
       </Link>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold">
             {card && <EntityIcon name={card.icon} color={card.color} imageUrl={card.iconUrl} />}
@@ -94,7 +94,7 @@ export default function CardDetailPage({
       </div>
 
       {isLoading && (
-        <div className="grid gap-2">
+        <div className="grid grid-cols-1 gap-2">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-14" />
           ))}
@@ -105,7 +105,7 @@ export default function CardDetailPage({
         <p className="text-muted-foreground text-sm">Nenhuma fatura ainda.</p>
       )}
 
-      <div className="grid gap-2">
+      <div className="grid grid-cols-1 gap-2">
         {invoices?.map((invoice) => (
           <Link
             key={invoice.id}

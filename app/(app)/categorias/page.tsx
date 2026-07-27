@@ -92,10 +92,10 @@ function CategoryGroup({
   const orphans = ofType.filter((c) => c.parentId !== null && !topLevelIds.has(c.parentId))
 
   return (
-    <section className="grid gap-2">
+    <section className="grid grid-cols-1 gap-2">
       <h2 className="text-muted-foreground text-sm font-medium">{title}</h2>
       {topLevel.map((parent) => (
-        <div key={parent.id} className="grid gap-2">
+        <div key={parent.id} className="grid grid-cols-1 gap-2">
           <CategoryRow
             category={parent}
             indented={false}
@@ -167,8 +167,8 @@ export default function CategoriasPage() {
   }
 
   return (
-    <div className="grid gap-4">
-      <div className="flex items-center justify-between">
+    <div className="grid grid-cols-1 gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">Categorias</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <Button onClick={() => setOpen(true)}>
@@ -215,7 +215,7 @@ export default function CategoriasPage() {
       </Dialog>
 
       {isLoading && (
-        <div className="grid gap-2">
+        <div className="grid grid-cols-1 gap-2">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-10" />
           ))}

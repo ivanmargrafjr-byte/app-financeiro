@@ -58,7 +58,7 @@ export default function AccountDetailPage({
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-1 gap-4">
       <Link
         href="/contas"
         className="text-muted-foreground flex items-center gap-1 text-sm hover:underline"
@@ -67,7 +67,7 @@ export default function AccountDetailPage({
         Contas
       </Link>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold">
             {account && (
@@ -107,7 +107,7 @@ export default function AccountDetailPage({
       </div>
 
       {isLoading && (
-        <div className="grid gap-2">
+        <div className="grid grid-cols-1 gap-2">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-12" />
           ))}
@@ -120,7 +120,7 @@ export default function AccountDetailPage({
         </p>
       )}
 
-      <div className="grid gap-2">
+      <div className="grid grid-cols-1 gap-2">
         {transactions?.map((tx) => (
           <TransactionListItem key={tx.id} tx={tx} />
         ))}

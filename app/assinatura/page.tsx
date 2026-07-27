@@ -107,7 +107,7 @@ function AssinaturaContent() {
               : "Assine o Finanças Premium para continuar usando o app."}
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent className="grid grid-cols-1 gap-4">
           {!hasAccess && (
             <>
               <p className="text-2xl font-semibold">

@@ -109,14 +109,14 @@ export function SettleTransactionDialog({
               <TabsTrigger value="account">Conta</TabsTrigger>
               <TabsTrigger value="card">Cartão de crédito</TabsTrigger>
             </TabsList>
-            <TabsContent value="account" className="grid gap-4 pt-4">
+            <TabsContent value="account" className="grid grid-cols-1 gap-4 pt-4">
               <AccountField
                 accountId={accountId}
                 setAccountId={setAccountId}
                 accounts={accounts}
               />
             </TabsContent>
-            <TabsContent value="card" className="grid gap-4 pt-4">
+            <TabsContent value="card" className="grid grid-cols-1 gap-4 pt-4">
               <CardFields
                 cardId={cardId}
                 setCardId={setCardId}
@@ -129,7 +129,7 @@ export function SettleTransactionDialog({
             </TabsContent>
           </Tabs>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <AccountField accountId={accountId} setAccountId={setAccountId} accounts={accounts} />
           </div>
         )}
@@ -152,7 +152,7 @@ function AccountField({
   accounts: ReturnType<typeof useAccounts>["data"]
 }) {
   return (
-    <div className="grid gap-2">
+    <div className="grid grid-cols-1 gap-2">
       <Label>Conta</Label>
       <Select value={accountId} onValueChange={(v) => setAccountId(v ?? "")}>
         <SelectTrigger className="w-full">
@@ -193,7 +193,7 @@ function CardFields({
 
   return (
     <>
-      <div className="grid gap-2">
+      <div className="grid grid-cols-1 gap-2">
         <Label>Cartão</Label>
         <Select value={cardId} onValueChange={(v) => setCardId(v ?? "")}>
           <SelectTrigger className="w-full">
@@ -211,7 +211,7 @@ function CardFields({
         </Select>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <div className="grid gap-2">
+        <div className="grid grid-cols-1 gap-2">
           <Label>Parcelas</Label>
           <Input
             type="text"
@@ -223,7 +223,7 @@ function CardFields({
           />
         </div>
         {isInstallment && (
-          <div className="grid gap-2">
+          <div className="grid grid-cols-1 gap-2">
             <Label>Juros total (R$)</Label>
             <Input
               type="text"

@@ -74,8 +74,8 @@ export default function RecorrentesPage() {
   }
 
   return (
-    <div className="grid gap-4">
-      <div className="flex items-center justify-between">
+    <div className="grid grid-cols-1 gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">Recorrências</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <Button onClick={() => setOpen(true)}>
@@ -121,7 +121,7 @@ export default function RecorrentesPage() {
       </Dialog>
 
       {isLoading && (
-        <div className="grid gap-2">
+        <div className="grid grid-cols-1 gap-2">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-14" />
           ))}
@@ -134,7 +134,7 @@ export default function RecorrentesPage() {
         </p>
       )}
 
-      <div className="grid gap-2">
+      <div className="grid grid-cols-1 gap-2">
         {rules?.map((rule) => {
           const account = accounts?.find((a) => a.id === rule.accountId)
           const category = categories?.find((c) => c.id === rule.categoryId)
