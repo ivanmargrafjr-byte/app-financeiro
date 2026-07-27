@@ -7,6 +7,20 @@
       "runtimeArgs": ["run", "dev"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "mail-client",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/ivan.margraf/mail-client", "run", "dev"],
+      "port": 3000,
+      "autoPort": false
+    },
+    {
+      "name": "reading-tracker",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/ivan.margraf/Dev/reading-tracker", "run", "web", "--", "--port", "8081"],
+      "port": 8081,
+      "autoPort": false
     }
   ]
 }
