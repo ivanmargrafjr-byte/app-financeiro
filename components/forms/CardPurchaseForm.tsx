@@ -157,9 +157,9 @@ export function CardPurchaseForm({
                 <FormLabel>Parcelas</FormLabel>
                 <FormControl>
                   <Input
-                    type="number"
-                    min={1}
-                    max={48}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     {...field}
                     value={field.value as number | string}
                   />
@@ -177,9 +177,8 @@ export function CardPurchaseForm({
                   <FormLabel>Juros total (R$)</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
-                      step="0.01"
-                      min={0}
+                      type="text"
+                      inputMode="decimal"
                       {...field}
                       value={field.value as number | string}
                     />
