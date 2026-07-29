@@ -12,6 +12,7 @@ import {
   Repeat,
   Shield,
   Tag,
+  User,
   Wallet,
 } from "lucide-react"
 import type { ReactNode } from "react"
@@ -32,6 +33,7 @@ const NAV_ITEMS = [
   { href: "/recorrentes", label: "Recorrências", icon: Repeat },
   { href: "/categorias", label: "Categorias", icon: Tag },
   { href: "/contratos", label: "Contratos", icon: FileText },
+  { href: "/conta", label: "Conta", icon: User },
 ]
 
 export function AppShell({ children }: { children: ReactNode }) {
