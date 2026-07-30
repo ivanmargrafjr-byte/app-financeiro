@@ -93,6 +93,15 @@ export type Transaction = {
   installmentGroupId?: string
   installmentNumber?: number
   installmentTotal?: number
+
+  /**
+   * Set on the account entry created by paying off a card invoice (usePayInvoice).
+   * The invoice's total was already counted as an expense via the card-origin
+   * purchase transactions that make it up — this entry only moves that already-spent
+   * money out of the linked account, so it must be excluded from monthly totals to
+   * avoid counting the same spending twice.
+   */
+  isInvoicePayment?: boolean
 }
 
 export type InvoiceStatus = "open" | "paid"

@@ -804,6 +804,10 @@ export function usePayInvoice() {
           // Already reflected in the account balance by the increment() below —
           // unlike a regular lançamento, an invoice payment isn't a pending draft.
           settled: true,
+          // The invoice total was already counted as an expense via its card-origin
+          // purchase transactions — this entry just moves that money out of the
+          // account, so monthly summaries must exclude it to avoid double counting.
+          isInvoicePayment: true,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         })

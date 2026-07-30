@@ -62,6 +62,7 @@ export function mapTransactionDoc(id: string, data: Record<string, unknown>): Tr
     installmentGroupId: data.installmentGroupId as string | undefined,
     installmentNumber: data.installmentNumber as number | undefined,
     installmentTotal: data.installmentTotal as number | undefined,
+    isInvoicePayment: data.isInvoicePayment as boolean | undefined,
   }
 }
 

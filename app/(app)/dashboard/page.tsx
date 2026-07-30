@@ -19,10 +19,16 @@ export default function DashboardPage() {
     // Entries paid via card keep their original doc as a checked historical marker,
     // but the amount that actually counts lives in the card transaction on the
     // invoice's due month — skip the marker here to avoid counting it twice.
+    // Invoice payments move money already counted via the invoice's card-origin
+    // purchases out of the account — also excluded to avoid double counting.
     // Transfers move money between the user's own accounts, and balance adjustments
     // are corrections rather than real income/expense — both neutral, excluded here.
     const txs = (transactions ?? []).filter(
-      (t) => t.settledVia !== "card" && t.origin !== "transfer" && t.origin !== "adjustment"
+      (t) =>
+        t.settledVia !== "card" &&
+        !t.isInvoicePayment &&
+        t.origin !== "transfer" &&
+        t.origin !== "adjustment"
     )
     const receitasCents = txs
       .filter((t) => t.direction === "in")
