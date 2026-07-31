@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
+import { Purchases, type PurchasesStoreProduct } from "@revenuecat/purchases-capacitor"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +11,13 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/lib/auth/AuthProvider"
 import { useUserProfile } from "@/lib/hooks/useUserProfile"
 import { ACTIVE_SUBSCRIPTION_STATUSES } from "@/lib/types"
+import {
+  configureRevenueCat,
+  isIOSNativeApp,
+  isPurchaseCancelledError,
+  purchasePremium,
+  restorePurchases,
+} from "@/lib/iap/revenuecat"
 
 const STATUS_LABELS: Record<string, string> = {
   exempt: "Acesso liberado",
@@ -34,6 +42,8 @@ function AssinaturaContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [submitting, setSubmitting] = useState(false)
+  const [iosProduct, setIosProduct] = useState<PurchasesStoreProduct | null>(null)
+  const isIOS = isIOSNativeApp()
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login")
@@ -45,7 +55,29 @@ function AssinaturaContent() {
     }
   }, [searchParams])
 
-  async function handleSubscribe() {
+  useEffect(() => {
+    if (!isIOS || !user) return
+    configureRevenueCat(user.uid)
+      .then(() => Purchases.getOfferings())
+      .then((offerings) => {
+        const pkg = offerings.current?.availablePackages[0]
+        if (pkg) setIosProduct(pkg.product)
+      })
+      .catch(() => {
+        // Falls back to the static price copy below if offerings can't be fetched.
+      })
+  }, [isIOS, user])
+
+  const status = profile?.subscriptionStatus ?? "none"
+  const hasAccess = ACTIVE_SUBSCRIPTION_STATUSES.includes(status)
+
+  // Whichever path granted access (Stripe webhook or RevenueCat webhook), move on
+  // as soon as Firestore reflects it — no need to know which one just fired.
+  useEffect(() => {
+    if (hasAccess) router.replace("/dashboard")
+  }, [hasAccess, router])
+
+  async function handleSubscribeStripe() {
     if (!user) return
     setSubmitting(true)
     try {
@@ -59,6 +91,34 @@ function AssinaturaContent() {
       window.location.href = url
     } catch {
       toast.error("Não foi possível iniciar a assinatura")
+      setSubmitting(false)
+    }
+  }
+
+  async function handleSubscribeIOS() {
+    setSubmitting(true)
+    try {
+      await purchasePremium()
+      toast.success("Assinatura confirmada — liberando o app...")
+    } catch (error) {
+      if (!isPurchaseCancelledError(error)) {
+        toast.error("Não foi possível concluir a assinatura")
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleRestore() {
+    setSubmitting(true)
+    try {
+      const restored = await restorePurchases()
+      if (!restored) {
+        toast.info("Nenhuma assinatura ativa encontrada para restaurar")
+      }
+    } catch {
+      toast.error("Não foi possível restaurar a assinatura")
+    } finally {
       setSubmitting(false)
     }
   }
@@ -89,8 +149,6 @@ function AssinaturaContent() {
     )
   }
 
-  const status = profile?.subscriptionStatus ?? "none"
-  const hasAccess = ACTIVE_SUBSCRIPTION_STATUSES.includes(status)
   const canManage = status !== "exempt" && status !== "none" && !!profile?.stripeCustomerId
 
   return (
@@ -108,13 +166,32 @@ function AssinaturaContent() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4">
-          {!hasAccess && (
+          {!hasAccess && isIOS && (
+            <>
+              <p className="text-2xl font-semibold">
+                {iosProduct?.priceString ?? "R$ 19,90"}
+                <span className="text-muted-foreground text-sm font-normal">/mês</span>
+              </p>
+              <p className="text-muted-foreground text-sm">
+                {iosProduct?.introPrice && iosProduct.introPrice.price === 0
+                  ? `${iosProduct.introPrice.periodNumberOfUnits} dias grátis antes da primeira cobrança.`
+                  : "7 dias grátis antes da primeira cobrança."}
+              </p>
+              <Button onClick={handleSubscribeIOS} disabled={submitting}>
+                {submitting ? "Processando..." : "Assinar"}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleRestore} disabled={submitting}>
+                Restaurar compras
+              </Button>
+            </>
+          )}
+          {!hasAccess && !isIOS && (
             <>
               <p className="text-2xl font-semibold">
                 R$ 19,90<span className="text-muted-foreground text-sm font-normal">/mês</span>
               </p>
               <p className="text-muted-foreground text-sm">7 dias grátis antes da primeira cobrança.</p>
-              <Button onClick={handleSubscribe} disabled={submitting}>
+              <Button onClick={handleSubscribeStripe} disabled={submitting}>
                 {submitting ? "Abrindo..." : "Assinar"}
               </Button>
             </>
