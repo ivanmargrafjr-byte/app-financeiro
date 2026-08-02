@@ -8,6 +8,7 @@ import { Purchases, type PurchasesStoreProduct } from "@revenuecat/purchases-cap
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { DeleteAccountCard } from "@/components/account/DeleteAccountCard"
 import { useAuth } from "@/lib/auth/AuthProvider"
 import { useUserProfile } from "@/lib/hooks/useUserProfile"
 import { ACTIVE_SUBSCRIPTION_STATUSES } from "@/lib/types"
@@ -153,64 +154,70 @@ function AssinaturaContent() {
 
   return (
     <div className="flex flex-1 items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Assinatura
-            <Badge variant={hasAccess ? "secondary" : "outline"}>{STATUS_LABELS[status]}</Badge>
-          </CardTitle>
-          <CardDescription>
-            {hasAccess
-              ? "Sua conta tem acesso ao Finanças."
-              : "Assine o Finanças Premium para continuar usando o app."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-4">
-          {!hasAccess && isIOS && (
-            <>
-              <p className="text-2xl font-semibold">
-                {iosProduct?.priceString ?? "R$ 19,90"}
-                <span className="text-muted-foreground text-sm font-normal">/mês</span>
-              </p>
-              <p className="text-muted-foreground text-sm">
-                {iosProduct?.introPrice && iosProduct.introPrice.price === 0
-                  ? `${iosProduct.introPrice.periodNumberOfUnits} dias grátis antes da primeira cobrança.`
-                  : "7 dias grátis antes da primeira cobrança."}
-              </p>
-              <Button onClick={handleSubscribeIOS} disabled={submitting}>
-                {submitting ? "Processando..." : "Assinar"}
+      <div className="grid w-full max-w-sm gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Assinatura
+              <Badge variant={hasAccess ? "secondary" : "outline"}>{STATUS_LABELS[status]}</Badge>
+            </CardTitle>
+            <CardDescription>
+              {hasAccess
+                ? "Sua conta tem acesso ao Finanças."
+                : "Assine o Finanças Premium para continuar usando o app."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 gap-4">
+            {!hasAccess && isIOS && (
+              <>
+                <p className="text-2xl font-semibold">
+                  {iosProduct?.priceString ?? "R$ 19,90"}
+                  <span className="text-muted-foreground text-sm font-normal">/mês</span>
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  {iosProduct?.introPrice && iosProduct.introPrice.price === 0
+                    ? `${iosProduct.introPrice.periodNumberOfUnits} dias grátis antes da primeira cobrança.`
+                    : "7 dias grátis antes da primeira cobrança."}
+                </p>
+                <Button onClick={handleSubscribeIOS} disabled={submitting}>
+                  {submitting ? "Processando..." : "Assinar"}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleRestore} disabled={submitting}>
+                  Restaurar compras
+                </Button>
+              </>
+            )}
+            {!hasAccess && !isIOS && (
+              <>
+                <p className="text-2xl font-semibold">
+                  R$ 19,90<span className="text-muted-foreground text-sm font-normal">/mês</span>
+                </p>
+                <p className="text-muted-foreground text-sm">7 dias grátis antes da primeira cobrança.</p>
+                <Button onClick={handleSubscribeStripe} disabled={submitting}>
+                  {submitting ? "Abrindo..." : "Assinar"}
+                </Button>
+              </>
+            )}
+            {hasAccess && canManage && (
+              <Button variant="outline" onClick={handleManage} disabled={submitting}>
+                {submitting ? "Abrindo..." : "Gerenciar assinatura"}
               </Button>
-              <Button variant="ghost" size="sm" onClick={handleRestore} disabled={submitting}>
-                Restaurar compras
+            )}
+            {hasAccess && (
+              <Button variant="ghost" onClick={() => router.replace("/dashboard")}>
+                Ir para o app
               </Button>
-            </>
-          )}
-          {!hasAccess && !isIOS && (
-            <>
-              <p className="text-2xl font-semibold">
-                R$ 19,90<span className="text-muted-foreground text-sm font-normal">/mês</span>
-              </p>
-              <p className="text-muted-foreground text-sm">7 dias grátis antes da primeira cobrança.</p>
-              <Button onClick={handleSubscribeStripe} disabled={submitting}>
-                {submitting ? "Abrindo..." : "Assinar"}
-              </Button>
-            </>
-          )}
-          {hasAccess && canManage && (
-            <Button variant="outline" onClick={handleManage} disabled={submitting}>
-              {submitting ? "Abrindo..." : "Gerenciar assinatura"}
+            )}
+            <Button variant="ghost" size="sm" onClick={() => signOut()}>
+              Sair
             </Button>
-          )}
-          {hasAccess && (
-            <Button variant="ghost" onClick={() => router.replace("/dashboard")}>
-              Ir para o app
-            </Button>
-          )}
-          <Button variant="ghost" size="sm" onClick={() => signOut()}>
-            Sair
-          </Button>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {/* Reachable regardless of subscription state — deleting an account can't
+            require paying for one first. */}
+        <DeleteAccountCard />
+      </div>
     </div>
   )
 }
