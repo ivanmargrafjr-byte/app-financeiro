@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { toast } from "sonner"
 import { Purchases, type PurchasesStoreProduct } from "@revenuecat/purchases-capacitor"
 
@@ -158,13 +159,14 @@ function AssinaturaContent() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              Assinatura
+              Finanças Premium Mensal
               <Badge variant={hasAccess ? "secondary" : "outline"}>{STATUS_LABELS[status]}</Badge>
             </CardTitle>
             <CardDescription>
+              Assinatura mensal com renovação automática.{" "}
               {hasAccess
                 ? "Sua conta tem acesso ao Finanças."
-                : "Assine o Finanças Premium para continuar usando o app."}
+                : "Assine para continuar usando o app."}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-4">
@@ -211,6 +213,15 @@ function AssinaturaContent() {
             <Button variant="ghost" size="sm" onClick={() => signOut()}>
               Sair
             </Button>
+            <p className="text-muted-foreground text-center text-xs">
+              <Link href="/termos" className="underline">
+                Termos de Uso
+              </Link>
+              {" · "}
+              <Link href="/privacidade" className="underline">
+                Política de Privacidade
+              </Link>
+            </p>
           </CardContent>
         </Card>
 
