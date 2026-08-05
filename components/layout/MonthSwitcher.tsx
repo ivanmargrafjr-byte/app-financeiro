@@ -10,16 +10,28 @@ export function MonthSwitcher() {
 
   return (
     <div className="flex items-center gap-1">
-      <Button variant="outline" size="icon" onClick={prevMonth} aria-label="Mês anterior">
+      <Button
+        variant="outline"
+        size="icon"
+        className="size-11"
+        onClick={prevMonth}
+        aria-label="Mês anterior"
+      >
         <ChevronLeft className="size-4" />
       </Button>
       <button
         onClick={goToCurrentMonth}
-        className="min-w-40 text-center text-sm font-medium capitalize hover:underline"
+        className="min-w-40 py-3 text-center text-sm font-medium capitalize hover:underline"
       >
         {monthLabel(month)}
       </button>
-      <Button variant="outline" size="icon" onClick={nextMonth} aria-label="Próximo mês">
+      <Button
+        variant="outline"
+        size="icon"
+        className="size-11"
+        onClick={nextMonth}
+        aria-label="Próximo mês"
+      >
         <ChevronRight className="size-4" />
       </Button>
     </div>

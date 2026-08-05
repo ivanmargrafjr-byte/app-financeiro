@@ -67,7 +67,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors",
+                  "flex items-center gap-2 rounded-md px-3 py-3 text-sm font-medium whitespace-nowrap transition-colors",
                   active
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -81,7 +81,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
         <div className="mt-6 hidden flex-col gap-2 md:flex">
           <p className="text-muted-foreground truncate px-2 text-xs">{user?.email}</p>
-          <Button variant="ghost" size="sm" className="justify-start" onClick={handleSignOut}>
+          <Button
+            variant="ghost"
+            className="h-11 justify-start"
+            onClick={handleSignOut}
+          >
             <LogOut className="size-4" />
             Sair
           </Button>
