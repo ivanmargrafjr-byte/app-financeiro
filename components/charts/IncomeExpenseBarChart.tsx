@@ -1,6 +1,3 @@
-"use client"
-
-import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { formatCentsBRL } from "@/lib/domain/money"
 
 export function IncomeExpenseBarChart({
@@ -10,32 +7,27 @@ export function IncomeExpenseBarChart({
   receitasCents: number
   despesasCents: number
 }) {
-  const data = [
+  const max = Math.max(receitasCents, despesasCents, 1)
+  const bars = [
     { name: "Receitas", value: receitasCents, fill: "#16a34a" },
     { name: "Despesas", value: despesasCents, fill: "#ef4444" },
   ]
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
-      <BarChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-        <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={12} />
-        <YAxis hide />
-        <Tooltip
-          formatter={(value) => formatCentsBRL(Number(value))}
-          contentStyle={{
-            background: "var(--popover)",
-            color: "var(--popover-foreground)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius-md)",
-            fontSize: 12,
-          }}
-        />
-        <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-          {data.map((entry) => (
-            <Cell key={entry.name} fill={entry.fill} />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+    <div className="flex h-55 items-end justify-center gap-16">
+      {bars.map((bar) => (
+        <div key={bar.name} className="flex flex-col items-center gap-2">
+          <span className="text-sm font-medium">{formatCentsBRL(bar.value)}</span>
+          <div
+            className="w-16 rounded-t-md transition-[height]"
+            style={{
+              height: bar.value > 0 ? `${Math.max((bar.value / max) * 160, 6)}px` : "2px",
+              backgroundColor: bar.value > 0 ? bar.fill : "var(--border)",
+            }}
+          />
+          <span className="text-muted-foreground text-sm">{bar.name}</span>
+        </div>
+      ))}
+    </div>
   )
 }
