@@ -4,6 +4,17 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -107,6 +118,25 @@ export default function AdminPage() {
     }
   }
 
+  async function deleteUser(uid: string) {
+    if (!user) return
+    setBusyUid(uid)
+    try {
+      const idToken = await user.getIdToken()
+      const res = await fetch(`/api/admin/users/${uid}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${idToken}` },
+      })
+      if (!res.ok) throw new Error("failed")
+      setUsers((prev) => (prev ? prev.filter((u) => u.uid !== uid) : prev))
+      toast.success("Usuário excluído")
+    } catch {
+      toast.error("Não foi possível excluir o usuário")
+    } finally {
+      setBusyUid(null)
+    }
+  }
+
   if (authLoading || !authorized) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
@@ -143,14 +173,43 @@ export default function AdminPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      size="sm"
-                      variant={blocked ? "outline" : "destructive"}
-                      disabled={busyUid === u.uid}
-                      onClick={() => setStatus(u.uid, blocked ? "active" : "canceled")}
-                    >
-                      {blocked ? "Reativar" : "Bloquear"}
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant={blocked ? "outline" : "destructive"}
+                        disabled={busyUid === u.uid}
+                        onClick={() => setStatus(u.uid, blocked ? "active" : "canceled")}
+                      >
+                        {blocked ? "Reativar" : "Bloquear"}
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger
+                          render={<Button size="sm" variant="destructive" disabled={busyUid === u.uid} />}
+                        >
+                          Excluir
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir {u.email ?? "este usuário"}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Todos os dados dessa conta (contas, cartões, transações, categorias e
+                              recorrências) serão apagados permanentemente. Se houver uma assinatura
+                              Stripe ativa, ela será cancelada.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              variant="destructive"
+                              onClick={() => deleteUser(u.uid)}
+                              disabled={busyUid === u.uid}
+                            >
+                              {busyUid === u.uid ? "Excluindo..." : "Excluir permanentemente"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               )

@@ -14,3 +14,12 @@ const app =
       })
 
 export const adminDb = getFirestore(app)
+
+// firebase-admin/auth pulls in jose/jwks-rsa in a way that fails to bundle under
+// Vercel's Node runtime (same issue as verifyRequest.ts), so admin-level Auth
+// operations go through the Identity Toolkit Admin REST API instead, authenticated
+// with an OAuth access token minted from this same service account credential.
+export async function getAdminAccessToken() {
+  const { access_token } = await app.options.credential!.getAccessToken()
+  return access_token
+}
