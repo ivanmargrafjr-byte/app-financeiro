@@ -40,8 +40,12 @@ export default function SignupPage() {
   })
 
   useEffect(() => {
-    if (!loading && user) router.replace("/dashboard")
-  }, [user, loading, router])
+    // Skip while a signup is in flight: createUserWithEmailAndPassword fires
+    // onAuthStateChanged (making `user` truthy) before updateProfile/seedNewUser
+    // finish, so this effect would otherwise race onSubmit's own redirect and send
+    // the user to /dashboard before their Firestore profile doc exists.
+    if (!loading && user && !submitting) router.replace("/dashboard")
+  }, [user, loading, submitting, router])
 
   async function onSubmit(values: SignupFormValues) {
     setSubmitting(true)
