@@ -772,6 +772,53 @@ export function useDeleteCardTransaction() {
   })
 }
 
+export function useDeleteCardTransactions() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      transactionIds,
+      invoiceId,
+    }: {
+      transactionIds: string[]
+      invoiceId: string
+    }) => {
+      await runTransaction(db, async (trx) => {
+        const invoiceRef = invoiceDocRef(user!.uid, invoiceId)
+        const txRefs = transactionIds.map((id) => transactionDocRef(user!.uid, id))
+        const [invoiceSnap, txSnaps] = await Promise.all([
+          trx.get(invoiceRef),
+          Promise.all(txRefs.map((ref) => trx.get(ref))),
+        ])
+
+        if (invoiceSnap.exists() && invoiceSnap.data().status === "paid") {
+          throw new Error("Não é possível excluir lançamentos de uma fatura já paga")
+        }
+
+        let totalCents = 0
+        txSnaps.forEach((txSnap, i) => {
+          if (!txSnap.exists()) return
+          totalCents += txSnap.data().amountCents as number
+          trx.delete(txRefs[i])
+        })
+
+        if (invoiceSnap.exists() && totalCents > 0) {
+          trx.update(invoiceRef, {
+            totalAmountCents: increment(-totalCents),
+            updatedAt: serverTimestamp(),
+          })
+        }
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      queryClient.invalidateQueries({ queryKey: ["invoice"] })
+      queryClient.invalidateQueries({ queryKey: ["transactions"] })
+    },
+  })
+}
+
 export function usePayInvoice() {
   const { user } = useAuth()
   const queryClient = useQueryClient()

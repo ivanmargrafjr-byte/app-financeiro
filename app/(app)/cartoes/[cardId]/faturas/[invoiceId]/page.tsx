@@ -7,6 +7,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   DropdownMenu,
@@ -14,12 +15,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { EditCardTransactionDialog } from "@/components/transactions/EditCardTransactionDialog"
 import { ImportInvoiceDialog } from "@/components/transactions/ImportInvoiceDialog"
 import { useCards } from "@/lib/hooks/useCards"
 import {
   useDeleteCardTransaction,
+  useDeleteCardTransactions,
   useInvoice,
   useInvoiceTransactions,
   usePayInvoice,
@@ -39,11 +52,44 @@ export default function InvoiceDetailPage({
   const { data: transactions, isLoading: isLoadingTx } = useInvoiceTransactions(invoiceId)
   const payInvoice = usePayInvoice()
   const deleteTransaction = useDeleteCardTransaction()
+  const deleteTransactions = useDeleteCardTransactions()
   const [paying, setPaying] = useState(false)
   const [editingTx, setEditingTx] = useState<Transaction | null>(null)
   const [importOpen, setImportOpen] = useState(false)
+  const [selecting, setSelecting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const card = cards?.find((c) => c.id === cardId)
+
+  function toggleSelected(transactionId: string, checked: boolean) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (checked) next.add(transactionId)
+      else next.delete(transactionId)
+      return next
+    })
+  }
+
+  function toggleSelectAll(checked: boolean) {
+    setSelectedIds(checked ? new Set(transactions?.map((tx) => tx.id)) : new Set())
+  }
+
+  function exitSelectionMode() {
+    setSelecting(false)
+    setSelectedIds(new Set())
+  }
+
+  async function handleBulkDelete() {
+    try {
+      await deleteTransactions.mutateAsync({ transactionIds: [...selectedIds], invoiceId })
+      toast.success(
+        selectedIds.size === 1 ? "Lançamento excluído" : `${selectedIds.size} lançamentos excluídos`
+      )
+      exitSelectionMode()
+    } catch {
+      toast.error("Não foi possível excluir (fatura já paga?)")
+    }
+  }
 
   async function handlePay() {
     if (!invoice || !card) return
@@ -120,13 +166,78 @@ export default function InvoiceDetailPage({
         </div>
       )}
 
+      {invoice?.status === "open" && !!transactions?.length && (
+        <div className="flex items-center justify-between gap-2">
+          {selecting ? (
+            <>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={selectedIds.size > 0 && selectedIds.size === transactions.length}
+                  onCheckedChange={(checked) => toggleSelectAll(checked === true)}
+                />
+                {selectedIds.size > 0 ? `${selectedIds.size} selecionado(s)` : "Selecionar todos"}
+              </label>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" onClick={exitSelectionMode}>
+                  Cancelar
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger
+                    render={
+                      <Button variant="destructive" size="sm" disabled={selectedIds.size === 0} />
+                    }
+                  >
+                    Excluir selecionados
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Excluir {selectedIds.size} lançamento{selectedIds.size === 1 ? "" : "s"}?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Essa ação não pode ser desfeita. O total da fatura será atualizado.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        variant="destructive"
+                        onClick={handleBulkDelete}
+                        disabled={deleteTransactions.isPending}
+                      >
+                        {deleteTransactions.isPending ? "Excluindo..." : "Excluir permanentemente"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </>
+          ) : (
+            <Button variant="outline" size="sm" className="ml-auto" onClick={() => setSelecting(true)}>
+              Selecionar
+            </Button>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-2">
         {transactions?.map((tx) => (
           <div
             key={tx.id}
-            className="border-border flex items-center justify-between gap-2 rounded-md border px-3 py-2"
+            className={
+              "border-border flex items-center justify-between gap-2 rounded-md border px-3 py-2" +
+              (selecting ? " cursor-pointer select-none" : "")
+            }
+            onClick={selecting ? () => toggleSelected(tx.id, !selectedIds.has(tx.id)) : undefined}
           >
             <div className="flex min-w-0 items-center gap-3">
+              {selecting && (
+                <Checkbox
+                  checked={selectedIds.has(tx.id)}
+                  onCheckedChange={(checked) => toggleSelected(tx.id, checked === true)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
               <EntityIcon name={tx.categoryIcon} color={tx.categoryColor} imageUrl={tx.categoryIconUrl} />
               <div className="min-w-0">
                 <p className="flex items-center gap-2 text-sm font-medium">
@@ -144,7 +255,7 @@ export default function InvoiceDetailPage({
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <span className="text-sm font-medium">{formatCentsBRL(tx.amountCents)}</span>
-              {invoice?.status === "open" && (
+              {invoice?.status === "open" && !selecting && (
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     render={
