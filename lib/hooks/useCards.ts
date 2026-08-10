@@ -9,18 +9,20 @@ import { DEFAULT_ICON_NAME } from "@/lib/iconRegistry"
 import type { Card } from "@/lib/types"
 import type { CardFormValues } from "@/lib/validators/card"
 
-function cardsQueryKey(uid: string | undefined) {
-  return ["cards", uid]
+function cardsQueryKey(uid: string | undefined, archived = false) {
+  // Prefix-shared with the archived key so archiving/unarchiving can invalidate both
+  // lists with a single `["cards", uid]` invalidation.
+  return archived ? ["cards", uid, "archived"] : ["cards", uid]
 }
 
-export function useCards() {
+function useCardsWhere(archived: boolean) {
   const { user } = useAuth()
 
   return useQuery({
-    queryKey: cardsQueryKey(user?.uid),
+    queryKey: cardsQueryKey(user?.uid, archived),
     enabled: !!user,
     queryFn: async (): Promise<Card[]> => {
-      const snap = await getDocs(query(cardsCol(user!.uid), where("archived", "==", false)))
+      const snap = await getDocs(query(cardsCol(user!.uid), where("archived", "==", archived)))
       return snap.docs
         .map((d) => {
           const data = d.data()
@@ -41,6 +43,14 @@ export function useCards() {
         .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
     },
   })
+}
+
+export function useCards() {
+  return useCardsWhere(false)
+}
+
+export function useArchivedCards() {
+  return useCardsWhere(true)
 }
 
 export function useCreateCard() {
@@ -87,13 +97,13 @@ export function useUpdateCard() {
   })
 }
 
-export function useArchiveCard() {
+export function useSetCardArchived() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      await updateDoc(cardDocRef(user!.uid, id), { archived: true })
+    mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
+      await updateDoc(cardDocRef(user!.uid, id), { archived })
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: cardsQueryKey(user?.uid) }),
   })

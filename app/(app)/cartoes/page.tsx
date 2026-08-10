@@ -24,15 +24,23 @@ import { EntityIcon } from "@/components/forms/EntityIcon"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatCentsBRL, fromCents } from "@/lib/domain/money"
 import type { Card as CardEntity } from "@/lib/types"
-import { useArchiveCard, useCards, useCreateCard, useUpdateCard } from "@/lib/hooks/useCards"
+import {
+  useArchivedCards,
+  useCards,
+  useCreateCard,
+  useSetCardArchived,
+  useUpdateCard,
+} from "@/lib/hooks/useCards"
 
 export default function CartoesPage() {
   const { data: cards, isLoading } = useCards()
+  const { data: archivedCards } = useArchivedCards()
   const createCard = useCreateCard()
   const updateCard = useUpdateCard()
-  const archiveCard = useArchiveCard()
+  const setCardArchived = useSetCardArchived()
   const [open, setOpen] = useState(false)
   const [editingCard, setEditingCard] = useState<CardEntity | null>(null)
+  const [showArchived, setShowArchived] = useState(false)
 
   async function handleCreate(values: Parameters<typeof createCard.mutateAsync>[0]) {
     try {
@@ -55,12 +63,14 @@ export default function CartoesPage() {
     }
   }
 
-  async function handleArchive(id: string) {
+  async function handleSetArchived(id: string, archived: boolean) {
     try {
-      await archiveCard.mutateAsync(id)
-      toast.success("Cartão arquivado")
+      await setCardArchived.mutateAsync({ id, archived })
+      toast.success(archived ? "Cartão arquivado" : "Cartão desarquivado")
     } catch {
-      toast.error("Não foi possível arquivar o cartão")
+      toast.error(
+        archived ? "Não foi possível arquivar o cartão" : "Não foi possível desarquivar o cartão"
+      )
     }
   }
 
@@ -147,7 +157,7 @@ export default function CartoesPage() {
                   <DropdownMenuItem onClick={() => setEditingCard(card)}>
                     Editar
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleArchive(card.id)}>
+                  <DropdownMenuItem onClick={() => handleSetArchived(card.id, true)}>
                     Arquivar
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -164,6 +174,49 @@ export default function CartoesPage() {
           </Card>
         ))}
       </div>
+
+      {!!archivedCards?.length && (
+        <div className="grid grid-cols-1 gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="justify-self-start"
+            onClick={() => setShowArchived((v) => !v)}
+          >
+            {showArchived ? "Ocultar" : "Mostrar"} arquivados ({archivedCards.length})
+          </Button>
+
+          {showArchived && (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {archivedCards.map((card) => (
+                <Card key={card.id} className="opacity-70">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <CardTitle className="flex items-center gap-2 text-base font-medium">
+                      <EntityIcon name={card.icon} color={card.color} imageUrl={card.iconUrl} />
+                      {card.name}
+                    </CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSetArchived(card.id, false)}
+                    >
+                      Desarquivar
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground text-sm">
+                      Limite {formatCentsBRL(card.limitCents)}
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      Fecha dia {card.closingDay} · Vence dia {card.dueDay}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

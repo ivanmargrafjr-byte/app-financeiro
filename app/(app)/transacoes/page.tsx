@@ -81,6 +81,16 @@ export default function TransacoesPage() {
     }
   }
 
+  // useCards() only returns non-archived cards, so an archived card's faturas would
+  // otherwise linger here as nameless "Cartão" rows. Skip the filter while cards are
+  // still loading, or the list would flash empty on every page load.
+  const visibleInvoices = useMemo(() => {
+    if (!invoices) return []
+    if (!cards) return invoices
+    const activeCardIds = new Set(cards.map((c) => c.id))
+    return invoices.filter((invoice) => activeCardIds.has(invoice.cardId))
+  }, [invoices, cards])
+
   const allTx = transactions ?? []
   // Card purchases are represented consolidated in the "Faturas do mês" card above —
   // showing every individual purchase here too would duplicate that (and get noisy
@@ -95,11 +105,11 @@ export default function TransacoesPage() {
     // Open invoices haven't debited any account balance yet (paying one does, via
     // usePayInvoice) — subtract them so the estimate reflects the money already
     // committed to this month's faturas.
-    const openInvoicesCents = (invoices ?? [])
+    const openInvoicesCents = visibleInvoices
       .filter((invoice) => invoice.status === "open")
       .reduce((acc, invoice) => acc + invoice.totalAmountCents, 0)
     return realBalance + pendingThisMonth - openInvoicesCents
-  }, [accounts, allTx, invoices])
+  }, [accounts, allTx, visibleInvoices])
 
   return (
     <div className="grid grid-cols-1 gap-4">
@@ -156,13 +166,13 @@ export default function TransacoesPage() {
         </CardContent>
       </Card>
 
-      {!isLoadingInvoices && invoices && invoices.length > 0 && (
+      {!isLoadingInvoices && visibleInvoices.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base font-medium">Faturas do mês</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-2">
-            {invoices.map((invoice) => {
+            {visibleInvoices.map((invoice) => {
               const card = cards?.find((c) => c.id === invoice.cardId)
               return (
                 <Link
