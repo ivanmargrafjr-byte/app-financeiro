@@ -91,7 +91,16 @@ export default function TransacoesPage() {
     return invoices.filter((invoice) => activeCardIds.has(invoice.cardId))
   }, [invoices, cards])
 
-  const allTx = transactions ?? []
+  // Same reasoning as visibleInvoices above, for accounts: an archived account's
+  // entries would otherwise linger with a "—" source label, and its pending entries
+  // would still move an estimate whose real balance no longer counts that account.
+  const allTx = useMemo(() => {
+    const tx = transactions ?? []
+    if (!accounts) return tx
+    const activeAccountIds = new Set(accounts.map((a) => a.id))
+    return tx.filter((t) => !t.accountId || activeAccountIds.has(t.accountId))
+  }, [transactions, accounts])
+
   // Card purchases are represented consolidated in the "Faturas do mês" card above —
   // showing every individual purchase here too would duplicate that (and get noisy
   // fast once imported faturas add many line items). Click into a fatura to see them.

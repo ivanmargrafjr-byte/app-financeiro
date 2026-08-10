@@ -28,8 +28,9 @@ import { formatCentsBRL } from "@/lib/domain/money"
 import { ACCOUNT_TYPE_LABELS, type Account } from "@/lib/types"
 import {
   useAccounts,
-  useArchiveAccount,
+  useArchivedAccounts,
   useCreateAccount,
+  useSetAccountArchived,
   useUpdateAccount,
 } from "@/lib/hooks/useAccounts"
 import { useCreateTransfer } from "@/lib/hooks/useTransactions"
@@ -37,14 +38,16 @@ import type { TransferFormValues } from "@/lib/validators/transfer"
 
 export default function ContasPage() {
   const { data: accounts, isLoading } = useAccounts()
+  const { data: archivedAccounts } = useArchivedAccounts()
   const createAccount = useCreateAccount()
   const updateAccount = useUpdateAccount()
-  const archiveAccount = useArchiveAccount()
+  const setAccountArchived = useSetAccountArchived()
   const createTransfer = useCreateTransfer()
   const [open, setOpen] = useState(false)
   const [transferOpen, setTransferOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<Account | null>(null)
   const [adjustingAccount, setAdjustingAccount] = useState<Account | null>(null)
+  const [showArchived, setShowArchived] = useState(false)
 
   async function handleCreate(values: Parameters<typeof createAccount.mutateAsync>[0]) {
     try {
@@ -67,12 +70,14 @@ export default function ContasPage() {
     }
   }
 
-  async function handleArchive(id: string) {
+  async function handleSetArchived(id: string, archived: boolean) {
     try {
-      await archiveAccount.mutateAsync(id)
-      toast.success("Conta arquivada")
+      await setAccountArchived.mutateAsync({ id, archived })
+      toast.success(archived ? "Conta arquivada" : "Conta desarquivada")
     } catch {
-      toast.error("Não foi possível arquivar a conta")
+      toast.error(
+        archived ? "Não foi possível arquivar a conta" : "Não foi possível desarquivar a conta"
+      )
     }
   }
 
@@ -193,7 +198,7 @@ export default function ContasPage() {
                   <DropdownMenuItem onClick={() => setAdjustingAccount(account)}>
                     Ajustar saldo
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleArchive(account.id)}>
+                  <DropdownMenuItem onClick={() => handleSetArchived(account.id, true)}>
                     Arquivar
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -210,6 +215,53 @@ export default function ContasPage() {
           </Card>
         ))}
       </div>
+
+      {!!archivedAccounts?.length && (
+        <div className="grid grid-cols-1 gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="justify-self-start"
+            onClick={() => setShowArchived((v) => !v)}
+          >
+            {showArchived ? "Ocultar" : "Mostrar"} arquivadas ({archivedAccounts.length})
+          </Button>
+
+          {showArchived && (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {archivedAccounts.map((account) => (
+                <Card key={account.id} className="opacity-70">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <CardTitle className="flex items-center gap-2 text-base font-medium">
+                      <EntityIcon
+                        name={account.icon}
+                        color={account.color}
+                        imageUrl={account.iconUrl}
+                      />
+                      {account.name}
+                    </CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSetArchived(account.id, false)}
+                    >
+                      Desarquivar
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-semibold">
+                      {formatCentsBRL(account.currentBalanceCents)}
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      {ACCOUNT_TYPE_LABELS[account.type]}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {adjustingAccount && (
         <AdjustBalanceDialog

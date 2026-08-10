@@ -16,19 +16,21 @@ import { DEFAULT_ICON_NAME } from "@/lib/iconRegistry"
 import type { Account, AccountType } from "@/lib/types"
 import type { AccountFormValues } from "@/lib/validators/account"
 
-function accountsQueryKey(uid: string | undefined) {
-  return ["accounts", uid]
+function accountsQueryKey(uid: string | undefined, archived = false) {
+  // Prefix-shared with the archived key so archiving/unarchiving can invalidate both
+  // lists with a single `["accounts", uid]` invalidation.
+  return archived ? ["accounts", uid, "archived"] : ["accounts", uid]
 }
 
-export function useAccounts() {
+function useAccountsWhere(archived: boolean) {
   const { user } = useAuth()
 
   return useQuery({
-    queryKey: accountsQueryKey(user?.uid),
+    queryKey: accountsQueryKey(user?.uid, archived),
     enabled: !!user,
     queryFn: async (): Promise<Account[]> => {
       const snap = await getDocs(
-        query(accountsCol(user!.uid), where("archived", "==", false))
+        query(accountsCol(user!.uid), where("archived", "==", archived))
       )
       return snap.docs
         .map((d) => {
@@ -50,6 +52,14 @@ export function useAccounts() {
         .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
     },
   })
+}
+
+export function useAccounts() {
+  return useAccountsWhere(false)
+}
+
+export function useArchivedAccounts() {
+  return useAccountsWhere(true)
 }
 
 export function useCreateAccount() {
@@ -99,14 +109,14 @@ export function useUpdateAccount() {
   })
 }
 
-export function useArchiveAccount() {
+export function useSetAccountArchived() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
       await updateDoc(accountDocRef(user!.uid, id), {
-        archived: true,
+        archived,
         updatedAt: serverTimestamp(),
       })
     },
