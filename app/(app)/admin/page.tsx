@@ -28,6 +28,9 @@ import {
 import { useAuth } from "@/lib/auth/AuthProvider"
 import { isAdminEmail } from "@/lib/admin/isAdmin"
 
+/** Statuses an admin can set by hand — mirrors MANUAL_STATUSES on the API route. */
+type ManualStatus = "canceled" | "active" | "exempt" | "none"
+
 type AdminUser = {
   uid: string
   email: string | null
@@ -96,7 +99,14 @@ export default function AdminPage() {
     }
   }, [authorized, user])
 
-  async function setStatus(uid: string, subscriptionStatus: "active" | "canceled") {
+  const STATUS_TOASTS: Record<ManualStatus, string> = {
+    canceled: "Usuário bloqueado",
+    active: "Usuário reativado",
+    exempt: "Acesso liberado",
+    none: "Acesso removido",
+  }
+
+  async function setStatus(uid: string, subscriptionStatus: ManualStatus) {
     if (!user) return
     setBusyUid(uid)
     try {
@@ -110,7 +120,7 @@ export default function AdminPage() {
       setUsers((prev) =>
         prev ? prev.map((u) => (u.uid === uid ? { ...u, subscriptionStatus } : u)) : prev
       )
-      toast.success(subscriptionStatus === "canceled" ? "Usuário bloqueado" : "Usuário reativado")
+      toast.success(STATUS_TOASTS[subscriptionStatus])
     } catch {
       toast.error("Não foi possível atualizar o usuário")
     } finally {
@@ -163,6 +173,7 @@ export default function AdminPage() {
           <TableBody>
             {users?.map((u) => {
               const blocked = u.subscriptionStatus === "canceled"
+              const exempt = u.subscriptionStatus === "exempt"
               return (
                 <TableRow key={u.uid}>
                   <TableCell>{u.email ?? "—"}</TableCell>
@@ -174,6 +185,14 @@ export default function AdminPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busyUid === u.uid}
+                        onClick={() => setStatus(u.uid, exempt ? "none" : "exempt")}
+                      >
+                        {exempt ? "Remover acesso" : "Liberar acesso"}
+                      </Button>
                       <Button
                         size="sm"
                         variant={blocked ? "outline" : "destructive"}

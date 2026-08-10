@@ -6,7 +6,9 @@ import { isAdminEmail } from "@/lib/admin/isAdmin"
 import { stripe } from "@/lib/stripe/client"
 import type { SubscriptionStatus } from "@/lib/types"
 
-const MANUAL_STATUSES: SubscriptionStatus[] = ["canceled", "active"]
+// "exempt" is the courtesy-access status: unlike "active" it's never overwritten by a
+// Stripe/RevenueCat webhook, so it's the one to use for permanently free accounts.
+const MANUAL_STATUSES: SubscriptionStatus[] = ["canceled", "active", "exempt", "none"]
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ uid: string }> }) {
   const authUser = await verifyRequestUser(request)
