@@ -52,13 +52,23 @@ export async function extractInvoiceLineItems(
   // slowest chunk rather than the sum. Page boundaries are safe split points: a line
   // item belongs to exactly one page, so nothing is double-counted or dropped.
   const chunks = await splitPdfIntoChunks(base64Data)
+  // Without this, a timeout tells us nothing about where the budget went: whether the
+  // split happened at all, how many calls it became, and which one was the long pole.
+  console.info(
+    `[invoiceExtraction] pdf ${Math.round(base64Data.length / 1024)}KB -> ${chunks.length} chunk(s)`
+  )
   if (chunks.length === 1) {
     return extractFromDocument(base64Data, mediaType, referenceMonthHint)
   }
 
-  const perChunk = await mapWithConcurrency(chunks, MAX_PARALLEL_CHUNKS, (chunk) =>
-    extractFromDocument(chunk, mediaType, referenceMonthHint)
-  )
+  const perChunk = await mapWithConcurrency(chunks, MAX_PARALLEL_CHUNKS, async (chunk, i) => {
+    const startedAt = Date.now()
+    const items = await extractFromDocument(chunk, mediaType, referenceMonthHint)
+    console.info(
+      `[invoiceExtraction] chunk ${i + 1}/${chunks.length}: ${items.length} item(s) in ${Date.now() - startedAt}ms`
+    )
+    return items
+  })
   return perChunk.flat()
 }
 
@@ -72,7 +82,7 @@ const MAX_PARALLEL_CHUNKS = 5
 async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
-  run: (item: T) => Promise<R>
+  run: (item: T, index: number) => Promise<R>
 ): Promise<R[]> {
   const results = new Array<R>(items.length)
   let next = 0
@@ -80,7 +90,7 @@ async function mapWithConcurrency<T, R>(
   async function worker() {
     while (next < items.length) {
       const index = next++
-      results[index] = await run(items[index])
+      results[index] = await run(items[index], index)
     }
   }
 

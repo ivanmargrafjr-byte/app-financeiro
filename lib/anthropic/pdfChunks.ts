@@ -22,11 +22,15 @@ export async function splitPdfIntoChunks(base64Data: string): Promise<string[]> 
       // readable, and failing here would block an import that would otherwise work.
       ignoreEncryption: true,
     })
-  } catch {
+  } catch (error) {
+    // Falling back to one call is the right behaviour, but silently doing so turns an
+    // unsplittable PDF into an unexplained timeout — say why.
+    console.warn("[pdfChunks] could not parse PDF, reading it in one call:", error)
     return [base64Data]
   }
 
   const pageCount = source.getPageCount()
+  console.info(`[pdfChunks] ${pageCount} page(s)`)
   if (pageCount <= PAGES_PER_CHUNK) return [base64Data]
 
   const chunks: string[] = []
