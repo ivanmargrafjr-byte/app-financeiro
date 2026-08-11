@@ -3,6 +3,7 @@ import { z } from "zod"
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod"
 
 import { anthropic } from "@/lib/anthropic/client"
+import { splitPdfIntoChunks } from "@/lib/anthropic/pdfChunks"
 
 const extractedInvoiceLineItemSchema = z.object({
   description: z.string().describe("Descrição do lançamento / nome do estabelecimento"),
@@ -38,6 +39,56 @@ type FileMediaType = "application/pdf" | "image/jpeg" | "image/png" | "image/gif
  * understands which billing cycle it's looking at.
  */
 export async function extractInvoiceLineItems(
+  base64Data: string,
+  mediaType: FileMediaType,
+  referenceMonthHint: string
+): Promise<ExtractedInvoiceLineItem[]> {
+  if (mediaType !== "application/pdf") {
+    return extractFromDocument(base64Data, mediaType, referenceMonthHint)
+  }
+
+  // A long fatura can't be read in a single call within the route's time budget, so
+  // it's split by page and the chunks are read concurrently — wall-clock is then the
+  // slowest chunk rather than the sum. Page boundaries are safe split points: a line
+  // item belongs to exactly one page, so nothing is double-counted or dropped.
+  const chunks = await splitPdfIntoChunks(base64Data)
+  if (chunks.length === 1) {
+    return extractFromDocument(base64Data, mediaType, referenceMonthHint)
+  }
+
+  const perChunk = await mapWithConcurrency(chunks, MAX_PARALLEL_CHUNKS, (chunk) =>
+    extractFromDocument(chunk, mediaType, referenceMonthHint)
+  )
+  return perChunk.flat()
+}
+
+/**
+ * Caps how many chunk extractions are in flight at once. Firing every chunk of a very
+ * long statement at the same time risks rate-limiting the whole import; a handful in
+ * parallel already collapses the wall-clock enough to fit the route's budget.
+ */
+const MAX_PARALLEL_CHUNKS = 5
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  run: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length)
+  let next = 0
+
+  async function worker() {
+    while (next < items.length) {
+      const index = next++
+      results[index] = await run(items[index])
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+  return results
+}
+
+async function extractFromDocument(
   base64Data: string,
   mediaType: FileMediaType,
   referenceMonthHint: string
