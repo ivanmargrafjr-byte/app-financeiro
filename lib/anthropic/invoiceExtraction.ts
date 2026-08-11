@@ -73,11 +73,11 @@ export async function extractInvoiceLineItems(
 }
 
 /**
- * Caps how many chunk extractions are in flight at once. Firing every chunk of a very
- * long statement at the same time risks rate-limiting the whole import; a handful in
- * parallel already collapses the wall-clock enough to fit the route's budget.
+ * Caps how many chunk extractions are in flight at once — enough that a typical
+ * statement goes out in a single wave (chunks are one page each), while still keeping
+ * a very long one from firing a burst that gets the whole import rate-limited.
  */
-const MAX_PARALLEL_CHUNKS = 5
+const MAX_PARALLEL_CHUNKS = 12
 
 async function mapWithConcurrency<T, R>(
   items: T[],

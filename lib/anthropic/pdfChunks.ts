@@ -2,12 +2,13 @@ import "server-only"
 import { PDFDocument } from "pdf-lib"
 
 /**
- * Pages per extraction call. A long fatura can't be read in one request — the model
- * call outruns the route's 60s budget — so it's split and the chunks are read in
- * parallel. Small enough that one chunk comfortably fits the budget, large enough
- * that a typical 2–4 page fatura still goes out as a single call.
+ * Pages per extraction call. What blows the route's time budget is how much the model
+ * has to *write*, not the file size: a single dense page of purchases is thousands of
+ * output tokens. Measured on a real fatura, a 3-page chunk never finished inside 60s
+ * while a near-empty one took 3s — so chunk one page at a time and lean on the
+ * concurrency below to keep wall-clock at roughly the slowest single page.
  */
-export const PAGES_PER_CHUNK = 3
+export const PAGES_PER_CHUNK = 1
 
 /**
  * Splits a PDF into base64 chunks of at most `PAGES_PER_CHUNK` pages each, in page
