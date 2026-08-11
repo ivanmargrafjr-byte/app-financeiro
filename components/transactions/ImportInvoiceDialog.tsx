@@ -110,12 +110,23 @@ export function ImportInvoiceDialog({
     if (!file) return
     setExtracting(true)
     setItems([])
+    // The route can spend up to 60s reading a long fatura; without a ceiling of our
+    // own, a request that dies server-side leaves this dialog spinning forever.
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 70_000)
     try {
       const body = new FormData()
       body.append("file", file)
       body.append("referenceMonth", invoice.referenceMonth)
-      const res = await fetch("/api/invoices/extract", { method: "POST", body })
-      if (!res.ok) throw new Error("extraction failed")
+      const res = await fetch("/api/invoices/extract", {
+        method: "POST",
+        body,
+        signal: controller.signal,
+      })
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: null }))
+        throw new Error(error ?? "Não foi possível ler a fatura automaticamente")
+      }
 
       const data: { items: ExtractedInvoiceLineItem[] } = await res.json()
       if (data.items.length === 0) {
@@ -139,9 +150,16 @@ export function ImportInvoiceDialog({
         }))
       )
       toast.success(`${data.items.length} lançamentos encontrados — revise antes de importar`)
-    } catch {
-      toast.error("Não foi possível ler a fatura automaticamente")
+    } catch (error) {
+      toast.error(
+        error instanceof DOMException && error.name === "AbortError"
+          ? "A fatura é longa demais para ser lida de uma vez. Envie as páginas em partes."
+          : error instanceof Error
+            ? error.message
+            : "Não foi possível ler a fatura automaticamente"
+      )
     } finally {
+      clearTimeout(timeout)
       setExtracting(false)
     }
   }

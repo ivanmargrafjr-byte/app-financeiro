@@ -2,6 +2,11 @@ import { NextResponse } from "next/server"
 
 import { extractInvoiceLineItems } from "@/lib/anthropic/invoiceExtraction"
 
+// Reading a long fatura takes far longer than the platform's default function
+// timeout — without this the request is killed mid-extraction and the client is
+// left waiting on a response that never comes. 60s is the ceiling on this plan.
+export const maxDuration = 60
+
 const MAX_FILE_BYTES = 32 * 1024 * 1024
 const ACCEPTED_TYPES = new Set([
   "application/pdf",

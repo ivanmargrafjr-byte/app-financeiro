@@ -46,7 +46,9 @@ export async function extractInvoiceLineItems(
 
   const message = await anthropic.messages.parse({
     model: "claude-opus-4-8",
-    max_tokens: 8192,
+    // A fatura with hundreds of purchases can outgrow a small cap mid-JSON, which
+    // fails the structured-output parse and reads to the user as "couldn't read it".
+    max_tokens: 16000,
     messages: [
       {
         role: "user",
@@ -69,6 +71,9 @@ export async function extractInvoiceLineItems(
     ],
     output_config: {
       format: zodOutputFormat(extractedInvoiceSchema),
+      // Transcribing line items is mechanical work, and this call has to finish
+      // inside the route's 60s budget — low effort is both faster and enough here.
+      effort: "low",
     },
   })
 
