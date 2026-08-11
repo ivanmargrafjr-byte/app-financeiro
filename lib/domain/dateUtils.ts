@@ -69,7 +69,15 @@ const MONTH_LABEL_FORMATTER = new Intl.DateTimeFormat("pt-BR", {
   year: "numeric",
 })
 
+export const MONTH_STRING_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/
+
 export function monthLabel(month: MonthString): string {
+  // A single malformed value (older data, a hand-edited doc) would otherwise build an
+  // Invalid Date and make Intl.format throw, taking down every screen that renders a
+  // month. Show the raw value instead — visibly odd, but not a crashed page.
+  if (typeof month !== "string" || !MONTH_STRING_PATTERN.test(month)) {
+    return month ? String(month) : "—"
+  }
   const { year, month: m } = parseMonth(month)
   const label = MONTH_LABEL_FORMATTER.format(new Date(year, m - 1, 1))
   return label.charAt(0).toUpperCase() + label.slice(1)
