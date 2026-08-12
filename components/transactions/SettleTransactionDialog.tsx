@@ -25,6 +25,7 @@ import { useCards } from "@/lib/hooks/useCards"
 import { useSettleTransaction } from "@/lib/hooks/useTransactions"
 import { useSettleTransactionViaCard } from "@/lib/hooks/useInvoices"
 import { monthLabel } from "@/lib/domain/dateUtils"
+import { parseAmountInput } from "@/lib/domain/money"
 import type { Transaction } from "@/lib/types"
 
 function clampInstallmentTotal(raw: string) {
@@ -73,7 +74,13 @@ export function SettleTransactionDialog({
           return
         }
         const installmentTotalNumber = clampInstallmentTotal(installmentTotal)
-        const interestAmountNumber = Number(interestAmount) || 0
+        // Reject rather than fall back to zero: silently dropping the juros the user
+        // typed produces parcelas that look right but understate what they'll pay.
+        const interestAmountNumber = interestAmount.trim() ? parseAmountInput(interestAmount) : 0
+        if (!Number.isFinite(interestAmountNumber) || interestAmountNumber < 0) {
+          toast.error("Informe um valor de juros válido")
+          return
+        }
         const { competenceMonths } = await settleViaCard.mutateAsync({
           transactionId: tx.id,
           card,
