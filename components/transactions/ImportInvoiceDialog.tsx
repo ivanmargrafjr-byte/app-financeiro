@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { toast } from "sonner"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -25,7 +26,8 @@ import {
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { useCategories } from "@/lib/hooks/useCategories"
 import { flattenCategoryTree } from "@/lib/domain/categoryTree"
-import { useImportInvoiceLineItems } from "@/lib/hooks/useInvoices"
+import { useImportInvoiceLineItems, useInvoiceTransactions } from "@/lib/hooks/useInvoices"
+import { markAlreadyImported } from "@/lib/domain/invoiceImportDedup"
 import { toCents } from "@/lib/domain/money"
 import { cn } from "@/lib/utils"
 import type { Card as CardEntity, Invoice } from "@/lib/types"
@@ -39,6 +41,9 @@ type DraftItem = {
   installmentNumber: string
   installmentTotal: string
   included: boolean
+  /** Matches something already on the invoice — unchecked by default, but the user
+   *  can still include it (two identical purchases on one day are legitimate). */
+  alreadyImported: boolean
 }
 
 type ExtractedInvoiceLineItem = {
@@ -95,6 +100,7 @@ export function ImportInvoiceDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const { data: categories } = useCategories()
+  const { data: existingTransactions } = useInvoiceTransactions(invoice.id)
   const importItems = useImportInvoiceLineItems()
 
   const [extracting, setExtracting] = useState(false)
@@ -137,6 +143,24 @@ export function ImportInvoiceDialog({
       // can enable right away — the user can still override any row individually.
       const fallbackCategoryId = categories?.find((c) => c.type === "despesa")?.id ?? ""
       setDefaultCategoryId(fallbackCategoryId)
+
+      // Re-importing the same fatura (to pick up purchases added since) would
+      // otherwise duplicate everything imported last time. Rows already on the
+      // invoice come in unchecked and labelled — never dropped silently, since a
+      // wrong match would quietly lose a real purchase.
+      const alreadyImported = markAlreadyImported(
+        data.items.map((item) => ({
+          description: item.description,
+          amountCents: toCents(item.amount),
+          date: item.date ?? invoice.closingDate,
+        })),
+        (existingTransactions ?? []).map((tx) => ({
+          description: tx.description,
+          amountCents: tx.amountCents,
+          date: tx.date,
+        }))
+      )
+
       setItems(
         data.items.map((item, i) => ({
           id: `${i}-${Date.now()}`,
@@ -146,7 +170,8 @@ export function ImportInvoiceDialog({
           categoryId: fallbackCategoryId,
           installmentNumber: item.installmentNumber != null ? String(item.installmentNumber) : "",
           installmentTotal: item.installmentTotal != null ? String(item.installmentTotal) : "",
-          included: true,
+          included: !alreadyImported[i],
+          alreadyImported: alreadyImported[i],
         }))
       )
       toast.success(`${data.items.length} lançamentos encontrados — revise antes de importar`)
@@ -271,6 +296,11 @@ export function ImportInvoiceDialog({
                       />
                     </TableCell>
                     <TableCell>
+                      {item.alreadyImported && (
+                        <Badge variant="secondary" className="mb-1 text-xs">
+                          Já está na fatura
+                        </Badge>
+                      )}
                       <Input
                         value={item.description}
                         onChange={(e) => updateItem(item.id, { description: e.target.value })}
