@@ -5,17 +5,27 @@ import {
   arrayUnion,
   getDocs,
   increment,
+  query,
   runTransaction,
   serverTimestamp,
   updateDoc,
+  where,
 } from "firebase/firestore"
 
 import { useAuth } from "@/lib/auth/AuthProvider"
 import { useCategories } from "@/lib/hooks/useCategories"
 import { db } from "@/lib/firebase/client"
-import { accountDocRef, recurringRuleDocRef, recurringRulesCol, transactionDocRef } from "@/lib/firebase/paths"
+import {
+  accountDocRef,
+  recurringRuleDocRef,
+  recurringRulesCol,
+  transactionDocRef,
+  transactionsCol,
+} from "@/lib/firebase/paths"
 import { tsToMillis } from "@/lib/firebase/timestamp"
 import { occurrenceDateForMonth, recurringOccurrenceId, ruleAppliesToMonth } from "@/lib/domain/recurring"
+import { shouldPropagateToOccurrence } from "@/lib/domain/recurringPropagation"
+import { currentMonthString } from "@/lib/domain/dateUtils"
 import { toCents } from "@/lib/domain/money"
 import { DEFAULT_ICON_NAME } from "@/lib/iconRegistry"
 import type { MonthString } from "@/lib/domain/dateUtils"
@@ -90,13 +100,15 @@ export function useCreateRecurringRule() {
 
 export function useUpdateRecurringRule() {
   const { user } = useAuth()
+  const { data: categories } = useCategories()
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async ({ id, values }: { id: string; values: RecurringRuleFormValues }) => {
+      const amountCents = toCents(values.amount)
       await updateDoc(recurringRuleDocRef(user!.uid, id), {
         description: values.description,
-        amountCents: toCents(values.amount),
+        amountCents,
         direction: values.direction,
         categoryId: values.categoryId,
         accountId: values.accountId,
@@ -105,6 +117,52 @@ export function useUpdateRecurringRule() {
         endMonth: values.endMonth || null,
         updatedAt: serverTimestamp(),
       })
+
+      // Nothing else reads the rule doc: every month was materialized as its own
+      // lançamento, and generation skips any that already exists. Without this the
+      // rule would say R$ 16.300 while all twelve months on screen still said 15.900.
+      const category = categories?.find((c) => c.id === values.categoryId)
+      const currentMonth = currentMonthString()
+      const occurrences = await getDocs(
+        query(transactionsCol(user!.uid), where("recurringSeriesId", "==", id))
+      )
+
+      await Promise.all(
+        occurrences.docs
+          .filter((d) =>
+            shouldPropagateToOccurrence(
+              {
+                competenceMonth: d.data().competenceMonth as MonthString,
+                settled: (d.data().settled as boolean | undefined) ?? false,
+              },
+              currentMonth
+            )
+          )
+          .map((d) => {
+            const update: Record<string, unknown> = {
+              description: values.description,
+              amountCents,
+              direction: values.direction,
+              accountId: values.accountId,
+              date: occurrenceDateForMonth(
+                values.dayOfMonth,
+                d.data().competenceMonth as MonthString
+              ),
+              updatedAt: serverTimestamp(),
+            }
+            // Categories are denormalized onto each lançamento. Only rewrite them
+            // when the category is actually in hand, so a not-yet-loaded list can't
+            // blank out the name and colour of every occurrence.
+            if (category) {
+              update.categoryId = category.id
+              update.categoryName = category.name
+              update.categoryColor = category.color
+              update.categoryIcon = category.icon
+              update.categoryIconUrl = category.iconUrl ?? null
+            }
+            return updateDoc(d.ref, update)
+          })
+      )
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: rulesQueryKey(user?.uid) })
