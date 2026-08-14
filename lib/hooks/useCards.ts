@@ -4,6 +4,7 @@ import { addDoc, getDocs, query, serverTimestamp, updateDoc, where } from "fireb
 import { useAuth } from "@/lib/auth/AuthProvider"
 import { cardDocRef, cardsCol } from "@/lib/firebase/paths"
 import { tsToMillis } from "@/lib/firebase/timestamp"
+import { currentMonthString } from "@/lib/domain/dateUtils"
 import { toCents } from "@/lib/domain/money"
 import { DEFAULT_ICON_NAME } from "@/lib/iconRegistry"
 import type { Card } from "@/lib/types"
@@ -37,6 +38,7 @@ function useCardsWhere(archived: boolean) {
             iconUrl: (data.iconUrl as string | null | undefined) ?? undefined,
             color: data.color,
             archived: data.archived,
+            archivedFromMonth: (data.archivedFromMonth as string | null | undefined) ?? undefined,
             createdAt: tsToMillis(data.createdAt),
           } satisfies Card
         })
@@ -103,7 +105,26 @@ export function useSetCardArchived() {
 
   return useMutation({
     mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
-      await updateDoc(cardDocRef(user!.uid, id), { archived })
+      // Archiving a card that was replaced shouldn't erase the months it alone
+      // recorded, so it stops counting only from the month the replacement took
+      // over — the current one by default, adjustable afterwards on /cartoes.
+      await updateDoc(cardDocRef(user!.uid, id), {
+        archived,
+        archivedFromMonth: archived ? currentMonthString() : null,
+      })
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: cardsQueryKey(user?.uid) }),
+  })
+}
+
+/** Moves the month from which an archived card stops counting (see cardCutoff.ts). */
+export function useSetCardArchivedFromMonth() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, month }: { id: string; month: string | null }) => {
+      await updateDoc(cardDocRef(user!.uid, id), { archivedFromMonth: month })
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: cardsQueryKey(user?.uid) }),
   })

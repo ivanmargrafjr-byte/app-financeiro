@@ -29,8 +29,11 @@ import {
   useCards,
   useCreateCard,
   useSetCardArchived,
+  useSetCardArchivedFromMonth,
   useUpdateCard,
 } from "@/lib/hooks/useCards"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 export default function CartoesPage() {
   const { data: cards, isLoading } = useCards()
@@ -38,6 +41,7 @@ export default function CartoesPage() {
   const createCard = useCreateCard()
   const updateCard = useUpdateCard()
   const setCardArchived = useSetCardArchived()
+  const setArchivedFromMonth = useSetCardArchivedFromMonth()
   const [open, setOpen] = useState(false)
   const [editingCard, setEditingCard] = useState<CardEntity | null>(null)
   const [showArchived, setShowArchived] = useState(false)
@@ -71,6 +75,17 @@ export default function CartoesPage() {
       toast.error(
         archived ? "Não foi possível arquivar o cartão" : "Não foi possível desarquivar o cartão"
       )
+    }
+  }
+
+  async function handleCutoffChange(id: string, month: string) {
+    try {
+      await setArchivedFromMonth.mutateAsync({ id, month: month || null })
+      toast.success(
+        month ? "Mês de corte atualizado" : "Corte removido — o cartão volta a contar sempre"
+      )
+    } catch {
+      toast.error("Não foi possível atualizar o mês de corte")
     }
   }
 
@@ -203,13 +218,30 @@ export default function CartoesPage() {
                       Desarquivar
                     </Button>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground text-sm">
-                      Limite {formatCentsBRL(card.limitCents)}
-                    </p>
-                    <p className="text-muted-foreground text-sm">
-                      Fecha dia {card.closingDay} · Vence dia {card.dueDay}
-                    </p>
+                  <CardContent className="grid gap-3">
+                    <div>
+                      <p className="text-muted-foreground text-sm">
+                        Limite {formatCentsBRL(card.limitCents)}
+                      </p>
+                      <p className="text-muted-foreground text-sm">
+                        Fecha dia {card.closingDay} · Vence dia {card.dueDay}
+                      </p>
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label htmlFor={`corte-${card.id}`} className="text-xs">
+                        Para de contar a partir de
+                      </Label>
+                      <Input
+                        id={`corte-${card.id}`}
+                        type="month"
+                        defaultValue={card.archivedFromMonth ?? ""}
+                        onChange={(e) => handleCutoffChange(card.id, e.target.value)}
+                      />
+                      <p className="text-muted-foreground text-xs">
+                        Os meses anteriores continuam somando — só eles guardam esse
+                        histórico. Em branco, o cartão soma em todos os meses.
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               ))}

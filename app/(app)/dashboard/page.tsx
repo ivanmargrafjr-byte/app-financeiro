@@ -8,27 +8,39 @@ import { IncomeExpenseBarChart } from "@/components/charts/IncomeExpenseBarChart
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { useMonth } from "@/lib/month/MonthProvider"
 import { useMonthTransactions } from "@/lib/hooks/useTransactions"
+import { useArchivedCards } from "@/lib/hooks/useCards"
+import { cardCountsInMonth } from "@/lib/domain/cardCutoff"
 import { formatCentsBRL } from "@/lib/domain/money"
 import { DEFAULT_ICON_NAME } from "@/lib/iconRegistry"
 
 export default function DashboardPage() {
   const { month } = useMonth()
   const { data: transactions, isLoading } = useMonthTransactions(month)
+  // Needed to apply each archived card's cutoff below. Its loading state gates the
+  // skeleton too, so the totals never flash the pre-cutoff (inflated) figure first.
+  const { data: archivedCards, isLoading: isLoadingArchivedCards } = useArchivedCards()
 
   const summary = useMemo(() => {
+    const archivedById = new Map((archivedCards ?? []).map((c) => [c.id, c]))
+
     // Entries paid via card keep their original doc as a checked historical marker,
     // but the amount that actually counts lives in the card transaction on the
     // invoice's due month — skip the marker here to avoid counting it twice.
     // Invoice payments move money already counted via the invoice's card-origin
     // purchases out of the account — also excluded to avoid double counting.
     // Transfers move money between the user's own accounts, and balance adjustments
-    // are corrections rather than real income/expense — both neutral, excluded here.
+    // are corrections whose effect is already in each account's current balance —
+    // both neutral, excluded here.
+    // A card replaced by a new one keeps its old entries for the months only it
+    // recorded, but from its cutoff month on they are a stale duplicate of what the
+    // replacement carries — see lib/domain/cardCutoff.ts.
     const txs = (transactions ?? []).filter(
       (t) =>
         t.settledVia !== "card" &&
         !t.isInvoicePayment &&
         t.origin !== "transfer" &&
-        t.origin !== "adjustment"
+        t.origin !== "adjustment" &&
+        cardCountsInMonth(archivedById.get(t.cardId ?? ""), t.competenceMonth)
     )
     const receitasCents = txs
       .filter((t) => t.direction === "in")
@@ -63,9 +75,9 @@ export default function DashboardPage() {
         (a, b) => b.amountCents - a.amountCents
       ),
     }
-  }, [transactions])
+  }, [transactions, archivedCards])
 
-  if (isLoading) {
+  if (isLoading || isLoadingArchivedCards) {
     return (
       <div className="grid gap-4 sm:grid-cols-3">
         {[1, 2, 3].map((i) => (

@@ -28,6 +28,12 @@ export type Card = {
   iconUrl?: string
   color: string
   archived: boolean
+  /**
+   * 'YYYY-MM' — the month a replacement card took over, set when archiving. From it
+   * on this card stops contributing to monthly totals; earlier months still count,
+   * since they exist only here. See lib/domain/cardCutoff.ts.
+   */
+  archivedFromMonth?: string
   createdAt: number
 }
 

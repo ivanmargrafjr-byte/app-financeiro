@@ -20,7 +20,7 @@ import { TransferForm } from "@/components/forms/TransferForm"
 import { TransactionListItem } from "@/components/transactions/TransactionListItem"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { useAccounts } from "@/lib/hooks/useAccounts"
-import { useCards } from "@/lib/hooks/useCards"
+import { useArchivedCards, useCards } from "@/lib/hooks/useCards"
 import { useCategories } from "@/lib/hooks/useCategories"
 import { useMonthInvoices } from "@/lib/hooks/useInvoices"
 import {
@@ -30,6 +30,7 @@ import {
 } from "@/lib/hooks/useTransactions"
 import { formatCentsBRL } from "@/lib/domain/money"
 import { monthLabel } from "@/lib/domain/dateUtils"
+import { cardCountsInMonth } from "@/lib/domain/cardCutoff"
 import { useMonth } from "@/lib/month/MonthProvider"
 import type { AccountTransactionFormValues } from "@/lib/validators/transaction"
 import type { TransferFormValues } from "@/lib/validators/transfer"
@@ -39,6 +40,7 @@ export default function TransacoesPage() {
   const { data: transactions, isLoading } = useMonthTransactions(month)
   const { data: accounts } = useAccounts()
   const { data: cards } = useCards()
+  const { data: archivedCards } = useArchivedCards()
   const { data: categories } = useCategories()
   const { data: invoices, isLoading: isLoadingInvoices } = useMonthInvoices(month)
   const createTransaction = useCreateAccountTransaction()
@@ -81,15 +83,23 @@ export default function TransacoesPage() {
     }
   }
 
-  // useCards() only returns non-archived cards, so an archived card's faturas would
-  // otherwise linger here as nameless "Cartão" rows. Skip the filter while cards are
-  // still loading, or the list would flash empty on every page load.
+  // An archived card's faturas still belong to the months before its replacement took
+  // over — those exist nowhere else, and the dashboard counts them. From its cutoff
+  // month on they're a stale duplicate, so they drop out here exactly as they do
+  // there. Skip the filter while either list is still loading, or this would flash
+  // empty on every page load.
   const visibleInvoices = useMemo(() => {
     if (!invoices) return []
-    if (!cards) return invoices
+    if (!cards || !archivedCards) return invoices
     const activeCardIds = new Set(cards.map((c) => c.id))
-    return invoices.filter((invoice) => activeCardIds.has(invoice.cardId))
-  }, [invoices, cards])
+    const archivedById = new Map(archivedCards.map((c) => [c.id, c]))
+    return invoices.filter((invoice) => {
+      // A fatura whose card is neither list is orphaned — it would render as a
+      // nameless "Cartão" row, so keep it out as before.
+      const known = activeCardIds.has(invoice.cardId) || archivedById.has(invoice.cardId)
+      return known && cardCountsInMonth(archivedById.get(invoice.cardId), month)
+    })
+  }, [invoices, cards, archivedCards, month])
 
   // Same reasoning as visibleInvoices above, for accounts: an archived account's
   // entries would otherwise linger with a "—" source label, and its pending entries
