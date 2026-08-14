@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   addDoc,
   arrayUnion,
+  deleteDoc,
   getDocs,
   increment,
   query,
@@ -24,7 +25,10 @@ import {
 } from "@/lib/firebase/paths"
 import { tsToMillis } from "@/lib/firebase/timestamp"
 import { occurrenceDateForMonth, recurringOccurrenceId, ruleAppliesToMonth } from "@/lib/domain/recurring"
-import { shouldPropagateToOccurrence } from "@/lib/domain/recurringPropagation"
+import {
+  dispositionForOccurrence,
+  type RuleRange,
+} from "@/lib/domain/recurringPropagation"
 import { currentMonthString } from "@/lib/domain/dateUtils"
 import { toCents } from "@/lib/domain/money"
 import { DEFAULT_ICON_NAME } from "@/lib/iconRegistry"
@@ -98,6 +102,43 @@ export function useCreateRecurringRule() {
   })
 }
 
+/**
+ * Brings a rule's already-materialized months back in line with the rule itself:
+ * rewrites the ones it still covers, removes the ones it no longer does (switched off,
+ * or outside a start/end that moved), and leaves settled and past months untouched.
+ * Deletion only ever reaches unsettled months, so no account balance moves.
+ */
+async function reconcileOccurrences(
+  uid: string,
+  ruleId: string,
+  options: {
+    range: RuleRange
+    buildUpdate?: (competenceMonth: MonthString) => Record<string, unknown>
+  }
+) {
+  const currentMonth = currentMonthString()
+  const occurrences = await getDocs(
+    query(transactionsCol(uid), where("recurringSeriesId", "==", ruleId))
+  )
+
+  await Promise.all(
+    occurrences.docs.map((d) => {
+      const competenceMonth = d.data().competenceMonth as MonthString
+      const disposition = dispositionForOccurrence(
+        { competenceMonth, settled: (d.data().settled as boolean | undefined) ?? false },
+        options.range,
+        currentMonth
+      )
+
+      if (disposition === "delete") return deleteDoc(d.ref)
+      if (disposition === "update" && options.buildUpdate) {
+        return updateDoc(d.ref, options.buildUpdate(competenceMonth))
+      }
+      return Promise.resolve()
+    })
+  )
+}
+
 export function useUpdateRecurringRule() {
   const { user } = useAuth()
   const { data: categories } = useCategories()
@@ -122,47 +163,36 @@ export function useUpdateRecurringRule() {
       // lançamento, and generation skips any that already exists. Without this the
       // rule would say R$ 16.300 while all twelve months on screen still said 15.900.
       const category = categories?.find((c) => c.id === values.categoryId)
-      const currentMonth = currentMonthString()
-      const occurrences = await getDocs(
-        query(transactionsCol(user!.uid), where("recurringSeriesId", "==", id))
-      )
-
-      await Promise.all(
-        occurrences.docs
-          .filter((d) =>
-            shouldPropagateToOccurrence(
-              {
-                competenceMonth: d.data().competenceMonth as MonthString,
-                settled: (d.data().settled as boolean | undefined) ?? false,
-              },
-              currentMonth
-            )
-          )
-          .map((d) => {
-            const update: Record<string, unknown> = {
-              description: values.description,
-              amountCents,
-              direction: values.direction,
-              accountId: values.accountId,
-              date: occurrenceDateForMonth(
-                values.dayOfMonth,
-                d.data().competenceMonth as MonthString
-              ),
-              updatedAt: serverTimestamp(),
-            }
-            // Categories are denormalized onto each lançamento. Only rewrite them
-            // when the category is actually in hand, so a not-yet-loaded list can't
-            // blank out the name and colour of every occurrence.
-            if (category) {
-              update.categoryId = category.id
-              update.categoryName = category.name
-              update.categoryColor = category.color
-              update.categoryIcon = category.icon
-              update.categoryIconUrl = category.iconUrl ?? null
-            }
-            return updateDoc(d.ref, update)
-          })
-      )
+      await reconcileOccurrences(user!.uid, id, {
+        range: {
+          active: true,
+          startMonth: values.startMonth,
+          endMonth: values.endMonth || null,
+        },
+        // Shrinking the range leaves months the rule no longer covers; those get
+        // removed rather than rewritten.
+        buildUpdate: (competenceMonth) => {
+          const update: Record<string, unknown> = {
+            description: values.description,
+            amountCents,
+            direction: values.direction,
+            accountId: values.accountId,
+            date: occurrenceDateForMonth(values.dayOfMonth, competenceMonth),
+            updatedAt: serverTimestamp(),
+          }
+          // Categories are denormalized onto each lançamento. Only rewrite them when
+          // the category is actually in hand, so a not-yet-loaded list can't blank
+          // out the name and colour of every occurrence.
+          if (category) {
+            update.categoryId = category.id
+            update.categoryName = category.name
+            update.categoryColor = category.color
+            update.categoryIcon = category.icon
+            update.categoryIconUrl = category.iconUrl ?? null
+          }
+          return update
+        },
+      })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: rulesQueryKey(user?.uid) })
@@ -181,8 +211,14 @@ export function useDeactivateRecurringRule() {
         active: false,
         updatedAt: serverTimestamp(),
       })
+      // Switching a rule off has to take its pending future months with it — they were
+      // already materialized, and would otherwise keep inflating the totals for years.
+      await reconcileOccurrences(user!.uid, id, { range: { active: false } })
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: rulesQueryKey(user?.uid) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rulesQueryKey(user?.uid) })
+      queryClient.invalidateQueries({ queryKey: ["transactions"] })
+    },
   })
 }
 
