@@ -41,7 +41,9 @@ export function CategoryTransactionsDialog({
     <Dialog open={!!category} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          {/* pr-8 keeps a long category name clear of the absolutely-positioned
+              close button sitting in the corner. */}
+          <DialogTitle className="flex items-center gap-2 pr-8 text-sm">
             {category && (
               <EntityIcon
                 name={category.icon}
@@ -49,33 +51,33 @@ export function CategoryTransactionsDialog({
                 imageUrl={category.iconUrl}
               />
             )}
-            {category?.name ?? ""}
+            <span className="truncate">{category?.name ?? ""}</span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-3">
-          <div className="text-muted-foreground flex items-baseline justify-between text-sm">
+        <div className="grid gap-2">
+          <div className="text-muted-foreground flex items-baseline justify-between gap-2 text-xs">
             <span>
               {transactions.length}{" "}
               {transactions.length === 1 ? "lançamento" : "lançamentos"} · {periodLabel}
             </span>
-            <span className="text-foreground text-base font-semibold">
+            <span className="text-foreground shrink-0 text-sm font-semibold">
               {formatCentsBRL(total)}
             </span>
           </div>
 
           {transactions.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Nenhum lançamento no período.</p>
+            <p className="text-muted-foreground text-xs">Nenhum lançamento no período.</p>
           ) : (
             <div className="grid gap-1">
               {transactions.map((tx) => (
                 <div
                   key={tx.id}
-                  className="border-border flex items-center justify-between gap-3 rounded-md border px-3 py-2"
+                  className="border-border flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5"
                 >
                   <span className="min-w-0">
-                    <span className="block truncate text-sm">{tx.description}</span>
-                    <span className="text-muted-foreground text-xs">
+                    <span className="block truncate text-xs">{tx.description}</span>
+                    <span className="text-muted-foreground text-[0.6875rem]">
                       {formatDay(tx.date)}
                       {showMonth && ` · ${shortMonthLabel(tx.competenceMonth)}`}
                       {tx.installmentTotal
@@ -83,7 +85,7 @@ export function CategoryTransactionsDialog({
                         : ""}
                     </span>
                   </span>
-                  <span className="shrink-0 text-sm font-medium">
+                  <span className="shrink-0 text-xs font-medium tabular-nums">
                     {formatCentsBRL(tx.amountCents)}
                   </span>
                 </div>
