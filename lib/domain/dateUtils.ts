@@ -71,6 +71,20 @@ const MONTH_LABEL_FORMATTER = new Intl.DateTimeFormat("pt-BR", {
 
 export const MONTH_STRING_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/
 
+const SHORT_MONTH_FORMATTER = new Intl.DateTimeFormat("pt-BR", {
+  month: "short",
+  year: "2-digit",
+})
+
+/** 'ago/26' — for axis labels, where the full month name doesn't fit. */
+export function shortMonthLabel(month: MonthString): string {
+  if (typeof month !== "string" || !MONTH_STRING_PATTERN.test(month)) {
+    return month ? String(month) : "—"
+  }
+  const { year, month: m } = parseMonth(month)
+  return SHORT_MONTH_FORMATTER.format(new Date(year, m - 1, 1)).replace(/\.?\s+de\s+/, "/")
+}
+
 export function monthLabel(month: MonthString): string {
   // A single malformed value (older data, a hand-edited doc) would otherwise build an
   // Invalid Date and make Intl.format throw, taking down every screen that renders a

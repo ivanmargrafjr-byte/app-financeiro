@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
 import { v4 as uuidv4 } from "uuid"
 import {
   doc,
@@ -93,20 +93,46 @@ function monthTransactionsQueryKey(uid: string | undefined, month: string) {
   return ["transactions", "month", uid, month]
 }
 
+async function fetchMonthTransactions(uid: string, month: string): Promise<Transaction[]> {
+  const snap = await getDocs(query(transactionsCol(uid), where("competenceMonth", "==", month)))
+  return snap.docs
+    .map((d) => mapTransactionDoc(d.id, d.data()))
+    .sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1))
+}
+
 export function useMonthTransactions(month: string) {
   const { user } = useAuth()
 
   return useQuery({
     queryKey: monthTransactionsQueryKey(user?.uid, month),
     enabled: !!user,
-    queryFn: async (): Promise<Transaction[]> => {
-      const snap = await getDocs(
-        query(transactionsCol(user!.uid), where("competenceMonth", "==", month))
-      )
-      return snap.docs
-        .map((d) => mapTransactionDoc(d.id, d.data()))
-        .sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1))
-    },
+    queryFn: () => fetchMonthTransactions(user!.uid, month),
+  })
+}
+
+export type MonthTransactions = { month: string; transactions: Transaction[] }
+
+/**
+ * One query per month, sharing the exact cache entry `useMonthTransactions` uses — so
+ * widening the dashboard period reuses months already fetched, and the existing
+ * `["transactions"]` invalidations still reach all of them.
+ */
+export function useMonthsTransactions(months: string[]) {
+  const { user } = useAuth()
+
+  return useQueries({
+    queries: months.map((month) => ({
+      queryKey: monthTransactionsQueryKey(user?.uid, month),
+      enabled: !!user,
+      queryFn: () => fetchMonthTransactions(user!.uid, month),
+    })),
+    combine: (results) => ({
+      // Held back until every month has arrived, so totals never render half-summed.
+      data: results.every((r) => r.data)
+        ? results.map((r, i) => ({ month: months[i], transactions: r.data! }) as MonthTransactions)
+        : undefined,
+      isLoading: results.some((r) => r.isLoading),
+    }),
   })
 }
 

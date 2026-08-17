@@ -1,21 +1,35 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CategoryPieChart, type CategorySlice } from "@/components/charts/CategoryPieChart"
-import { IncomeExpenseBarChart } from "@/components/charts/IncomeExpenseBarChart"
+import { IncomeExpenseBarChart, type MonthTotals } from "@/components/charts/IncomeExpenseBarChart"
+import { CategoryTransactionsDialog } from "@/components/dashboard/CategoryTransactionsDialog"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { useMonth } from "@/lib/month/MonthProvider"
-import { useMonthTransactions } from "@/lib/hooks/useTransactions"
+import { useMonthsTransactions } from "@/lib/hooks/useTransactions"
 import { useArchivedCards } from "@/lib/hooks/useCards"
 import { cardCountsInMonth } from "@/lib/domain/cardCutoff"
+import {
+  monthsInPeriod,
+  PERIOD_LABELS,
+  PERIOD_LENGTHS,
+  type PeriodLength,
+} from "@/lib/domain/dashboardPeriod"
+import { monthLabel, shortMonthLabel } from "@/lib/domain/dateUtils"
 import { formatCentsBRL } from "@/lib/domain/money"
 import { DEFAULT_ICON_NAME } from "@/lib/iconRegistry"
+import type { Transaction } from "@/lib/types"
 
 export default function DashboardPage() {
   const { month } = useMonth()
-  const { data: transactions, isLoading } = useMonthTransactions(month)
+  const [periodLength, setPeriodLength] = useState<PeriodLength>(1)
+  const [selectedCategory, setSelectedCategory] = useState<CategorySlice | null>(null)
+
+  const months = useMemo(() => monthsInPeriod(month, periodLength), [month, periodLength])
+  const { data: monthsData, isLoading } = useMonthsTransactions(months)
   // Needed to apply each archived card's cutoff below. Its loading state gates the
   // skeleton too, so the totals never flash the pre-cutoff (inflated) figure first.
   const { data: archivedCards, isLoading: isLoadingArchivedCards } = useArchivedCards()
@@ -34,24 +48,35 @@ export default function DashboardPage() {
     // A card replaced by a new one keeps its old entries for the months only it
     // recorded, but from its cutoff month on they are a stale duplicate of what the
     // replacement carries — see lib/domain/cardCutoff.ts.
-    const txs = (transactions ?? []).filter(
-      (t) =>
-        t.settledVia !== "card" &&
-        !t.isInvoicePayment &&
-        t.origin !== "transfer" &&
-        t.origin !== "adjustment" &&
-        cardCountsInMonth(archivedById.get(t.cardId ?? ""), t.competenceMonth)
-    )
-    const receitasCents = txs
-      .filter((t) => t.direction === "in")
-      .reduce((acc, t) => acc + t.amountCents, 0)
-    const despesasCents = txs
-      .filter((t) => t.direction === "out")
-      .reduce((acc, t) => acc + t.amountCents, 0)
+    const counts = (t: Transaction) =>
+      t.settledVia !== "card" &&
+      !t.isInvoicePayment &&
+      t.origin !== "transfer" &&
+      t.origin !== "adjustment" &&
+      cardCountsInMonth(archivedById.get(t.cardId ?? ""), t.competenceMonth)
+
+    const perMonth: MonthTotals[] = []
+    const expenses: Transaction[] = []
+    let receitasCents = 0
+    let despesasCents = 0
+
+    for (const bucket of monthsData ?? []) {
+      const txs = bucket.transactions.filter(counts)
+      const receitas = txs
+        .filter((t) => t.direction === "in")
+        .reduce((acc, t) => acc + t.amountCents, 0)
+      const despesas = txs
+        .filter((t) => t.direction === "out")
+        .reduce((acc, t) => acc + t.amountCents, 0)
+
+      perMonth.push({ month: bucket.month, receitasCents: receitas, despesasCents: despesas })
+      expenses.push(...txs.filter((t) => t.direction === "out"))
+      receitasCents += receitas
+      despesasCents += despesas
+    }
 
     const byCategory = new Map<string, CategorySlice>()
-    for (const t of txs) {
-      if (t.direction !== "out") continue
+    for (const t of expenses) {
       const existing = byCategory.get(t.categoryId)
       if (existing) {
         existing.amountCents += t.amountCents
@@ -71,11 +96,41 @@ export default function DashboardPage() {
       receitasCents,
       despesasCents,
       saldoCents: receitasCents - despesasCents,
+      perMonth,
+      expenses,
       porCategoria: Array.from(byCategory.values()).sort(
         (a, b) => b.amountCents - a.amountCents
       ),
     }
-  }, [transactions, archivedCards])
+  }, [monthsData, archivedCards])
+
+  const multiMonth = months.length > 1
+  const periodLabel = multiMonth
+    ? `${shortMonthLabel(months[0])} – ${shortMonthLabel(months[months.length - 1])}`
+    : monthLabel(month)
+
+  const selectedTransactions = useMemo(
+    () =>
+      selectedCategory
+        ? summary.expenses.filter((t) => t.categoryId === selectedCategory.categoryId)
+        : [],
+    [selectedCategory, summary.expenses]
+  )
+
+  const periodPicker = (
+    <div className="flex gap-1">
+      {PERIOD_LENGTHS.map((length) => (
+        <Button
+          key={length}
+          size="sm"
+          variant={length === periodLength ? "secondary" : "ghost"}
+          onClick={() => setPeriodLength(length)}
+        >
+          {PERIOD_LABELS[length]}
+        </Button>
+      ))}
+    </div>
+  )
 
   if (isLoading || isLoadingArchivedCards) {
     return (
@@ -90,6 +145,11 @@ export default function DashboardPage() {
 
   return (
     <div className="grid grid-cols-1 gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-muted-foreground text-sm">{periodLabel}</p>
+        {periodPicker}
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-3">
         <Card>
           <CardHeader>
@@ -116,7 +176,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-muted-foreground text-sm font-medium">
-              Saldo do mês
+              {multiMonth ? "Saldo do período" : "Saldo do mês"}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -138,10 +198,7 @@ export default function DashboardPage() {
             <CardTitle className="text-base font-medium">Receitas x Despesas</CardTitle>
           </CardHeader>
           <CardContent>
-            <IncomeExpenseBarChart
-              receitasCents={summary.receitasCents}
-              despesasCents={summary.despesasCents}
-            />
+            <IncomeExpenseBarChart series={summary.perMonth} />
           </CardContent>
         </Card>
         <Card>
@@ -149,7 +206,15 @@ export default function DashboardPage() {
             <CardTitle className="text-base font-medium">Gastos por categoria</CardTitle>
           </CardHeader>
           <CardContent>
-            <CategoryPieChart data={summary.porCategoria} />
+            <CategoryPieChart
+              data={summary.porCategoria}
+              onSelect={setSelectedCategory}
+              emptyLabel={
+                multiMonth
+                  ? "Sem despesas categorizadas no período."
+                  : "Sem despesas categorizadas neste mês."
+              }
+            />
           </CardContent>
         </Card>
       </div>
@@ -159,19 +224,32 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="text-base font-medium">Detalhe por categoria</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-2">
+          <CardContent className="grid grid-cols-1 gap-1">
             {summary.porCategoria.map((c) => (
-              <div key={c.categoryId} className="flex items-center justify-between text-sm">
+              <button
+                key={c.categoryId}
+                type="button"
+                onClick={() => setSelectedCategory(c)}
+                className="hover:bg-muted flex items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors"
+              >
                 <span className="flex items-center gap-2">
                   <EntityIcon name={c.icon} color={c.color} imageUrl={c.iconUrl} />
                   {c.name}
                 </span>
                 <span className="font-medium">{formatCentsBRL(c.amountCents)}</span>
-              </div>
+              </button>
             ))}
           </CardContent>
         </Card>
       )}
+
+      <CategoryTransactionsDialog
+        category={selectedCategory}
+        transactions={selectedTransactions}
+        periodLabel={periodLabel}
+        showMonth={multiMonth}
+        onClose={() => setSelectedCategory(null)}
+      />
     </div>
   )
 }

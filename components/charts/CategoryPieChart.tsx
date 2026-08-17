@@ -11,11 +11,20 @@ const RADIUS = 70
 const STROKE_WIDTH = 40
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
-export function CategoryPieChart({ data }: { data: CategorySlice[] }) {
+export function CategoryPieChart({
+  data,
+  onSelect,
+  emptyLabel = "Sem despesas categorizadas neste mês.",
+}: {
+  data: CategorySlice[]
+  /** When given, each slice becomes a button that opens that category's lançamentos. */
+  onSelect?: (slice: CategorySlice) => void
+  emptyLabel?: string
+}) {
   if (data.length === 0) {
     return (
       <div className="text-muted-foreground flex h-64 items-center justify-center text-sm">
-        Sem despesas categorizadas neste mês.
+        {emptyLabel}
       </div>
     )
   }
@@ -55,7 +64,23 @@ export function CategoryPieChart({ data }: { data: CategorySlice[] }) {
             strokeWidth={STROKE_WIDTH}
             strokeDasharray={slice.dashArray}
             strokeDashoffset={slice.dashOffset}
-          />
+            {...(onSelect && {
+              role: "button",
+              tabIndex: 0,
+              className: "cursor-pointer outline-none hover:opacity-80 focus-visible:opacity-80",
+              onClick: () => onSelect(slice),
+              // The SVG ring is not a real button, so Enter/Space have to be wired up
+              // for it to be reachable without a pointer.
+              onKeyDown: (e: React.KeyboardEvent) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault()
+                  onSelect(slice)
+                }
+              },
+            })}
+          >
+            {onSelect && <title>{slice.name}</title>}
+          </circle>
         ))}
       </svg>
     </div>
