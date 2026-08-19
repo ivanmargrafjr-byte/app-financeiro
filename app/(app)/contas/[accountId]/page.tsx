@@ -2,7 +2,7 @@
 
 import { use, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Plus, SlidersHorizontal } from "lucide-react"
+import { ArrowLeft, Plus, SlidersHorizontal, Upload } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -17,6 +17,7 @@ import { TransactionForm } from "@/components/forms/TransactionForm"
 import { TransactionListItem } from "@/components/transactions/TransactionListItem"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { AdjustBalanceDialog } from "@/components/transactions/AdjustBalanceDialog"
+import { ImportStatementDialog } from "@/components/transactions/ImportStatementDialog"
 import { useAccounts } from "@/lib/hooks/useAccounts"
 import { useCategories } from "@/lib/hooks/useCategories"
 import { useAccountTransactions, useCreateAccountTransaction } from "@/lib/hooks/useTransactions"
@@ -36,6 +37,7 @@ export default function AccountDetailPage({
   const createTransaction = useCreateAccountTransaction()
   const [open, setOpen] = useState(false)
   const [adjustOpen, setAdjustOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
 
   const account = accounts?.find((a) => a.id === accountId)
 
@@ -81,7 +83,11 @@ export default function AccountDetailPage({
             </p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="size-4" />
+            Importar extrato
+          </Button>
           <Button variant="outline" onClick={() => setAdjustOpen(true)}>
             <SlidersHorizontal className="size-4" />
             Ajustar saldo
@@ -127,7 +133,14 @@ export default function AccountDetailPage({
       </div>
 
       {account && (
-        <AdjustBalanceDialog account={account} open={adjustOpen} onOpenChange={setAdjustOpen} />
+        <>
+          <AdjustBalanceDialog account={account} open={adjustOpen} onOpenChange={setAdjustOpen} />
+          <ImportStatementDialog
+            account={account}
+            open={importOpen}
+            onOpenChange={setImportOpen}
+          />
+        </>
       )}
     </div>
   )

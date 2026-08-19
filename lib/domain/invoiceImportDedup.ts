@@ -14,8 +14,9 @@ export type DedupCandidate = {
 }
 
 /** Descriptions come from an AI read of the PDF and vary between runs
- *  ("CARREFOUR  SA" vs "Carrefour Sa"), so compare them loosely. */
-function normalizeDescription(description: string): string {
+ *  ("CARREFOUR  SA" vs "Carrefour Sa"), so compare them loosely. Shared with the
+ *  extrato import, where the bank's wording varies the same way. */
+export function normalizeDescription(description: string): string {
   return description
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")

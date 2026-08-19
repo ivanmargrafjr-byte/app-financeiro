@@ -51,6 +51,7 @@ export function mapTransactionDoc(id: string, data: Record<string, unknown>): Tr
     settled: (data.settled as boolean | undefined) ?? true,
     accountId: data.accountId as string | undefined,
     recurringSeriesId: data.recurringSeriesId as string | undefined,
+    ofxFitId: data.ofxFitId as string | undefined,
     counterAccountId: data.counterAccountId as string | undefined,
     transferGroupId: data.transferGroupId as string | undefined,
     settledVia: data.settledVia as Transaction["settledVia"],
@@ -488,6 +489,126 @@ export function useCreateBalanceAdjustment() {
           updatedAt: serverTimestamp(),
         })
       })
+    },
+    onSuccess: () => invalidateTransactionQueries(queryClient, user?.uid),
+  })
+}
+
+/**
+ * One line of an extrato the user chose to import: either a new lançamento to
+ * create, or a pendente to efetivar (when `settleTransactionId` is set).
+ */
+export type OfxImportEntry = {
+  fitId: string
+  date: string
+  direction: "in" | "out"
+  /** Magnitude — the sign lives in `direction`, as everywhere else in the app. */
+  amountCents: number
+  description: string
+  /** Required to create; ignored when efetivando an existing lançamento. */
+  category: Category | null
+  /** When set, efetiva this pendente instead of creating a second lançamento. */
+  settleTransactionId?: string
+}
+
+/**
+ * Firestore allows 500 operations per transaction, and an extrato of a busy month
+ * runs to a few hundred lines, so the import is split into chunks. Each chunk is
+ * atomic on its own — and a chunk that fails leaves the earlier ones written but
+ * consistent, because every write carries its FITID: importing the same file
+ * again brings the already-written lines back as "Já importado", unchecked.
+ */
+const OFX_IMPORT_CHUNK_SIZE = 100
+
+/**
+ * Writes a batch of extrato lines against an account.
+ *
+ * Unlike a lançamento typed by hand, these arrive already settled: the money has
+ * demonstrably moved at the bank, so there is nothing left to efetivar and the
+ * account balance is updated in the same transaction.
+ */
+export function useImportOfxTransactions() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      accountId,
+      entries,
+    }: {
+      accountId: string
+      entries: OfxImportEntry[]
+    }) => {
+      const uid = user!.uid
+
+      for (let start = 0; start < entries.length; start += OFX_IMPORT_CHUNK_SIZE) {
+        const chunk = entries.slice(start, start + OFX_IMPORT_CHUNK_SIZE)
+
+        await runTransaction(db, async (trx) => {
+          // Every read has to happen before the first write, so the pendentes
+          // being efetivados are fetched up front.
+          const settling = chunk.filter((entry) => entry.settleTransactionId)
+          const settlingSnaps = await Promise.all(
+            settling.map((entry) => trx.get(transactionDocRef(uid, entry.settleTransactionId!)))
+          )
+
+          let balanceDelta = 0
+
+          settlingSnaps.forEach((snap, i) => {
+            // Gone or already efetivado (another device, an earlier partial run):
+            // skip rather than settle twice. The line stays in the file and comes
+            // back on the next import if it really is missing.
+            if (!snap.exists()) return
+            const data = snap.data()
+            if (data.settled) return
+
+            balanceDelta += signedAmount(
+              data.direction as "in" | "out",
+              data.amountCents as number
+            )
+            trx.update(snap.ref, {
+              settled: true,
+              accountId,
+              // Stamped so a later import of the same period recognises this
+              // lançamento as this bank movement, not as something new.
+              ofxFitId: settling[i].fitId,
+              updatedAt: serverTimestamp(),
+            })
+          })
+
+          for (const entry of chunk) {
+            if (entry.settleTransactionId) continue
+            if (!entry.category) throw new Error("Selecione uma categoria para cada lançamento")
+
+            balanceDelta += signedAmount(entry.direction, entry.amountCents)
+            trx.set(doc(transactionsCol(uid)), {
+              origin: "account",
+              direction: entry.direction,
+              amountCents: entry.amountCents,
+              description: entry.description,
+              categoryId: entry.category.id,
+              categoryName: entry.category.name,
+              categoryColor: entry.category.color,
+              categoryIcon: entry.category.icon,
+              categoryIconUrl: entry.category.iconUrl ?? null,
+              date: entry.date,
+              competenceMonth: monthOfDate(entry.date),
+              accountId,
+              settled: true,
+              ofxFitId: entry.fitId,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            })
+          }
+
+          if (balanceDelta !== 0) {
+            trx.update(accountDocRef(uid, accountId), {
+              currentBalanceCents: increment(balanceDelta),
+              updatedAt: serverTimestamp(),
+            })
+          }
+        })
+      }
     },
     onSuccess: () => invalidateTransactionQueries(queryClient, user?.uid),
   })

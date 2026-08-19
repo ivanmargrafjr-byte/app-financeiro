@@ -74,6 +74,14 @@ export type Transaction = {
   /** Only meaningful for origin === 'account': whether this entry has been applied to the account balance yet. */
   settled: boolean
 
+  /**
+   * The bank's own identifier (OFX FITID) for the movement this entry came from,
+   * set both on entries created by an extrato import and on pending entries that
+   * an import efetivou. It is what makes re-importing the same period exact
+   * instead of heuristic — see lib/domain/ofxImportMatch.ts.
+   */
+  ofxFitId?: string
+
   // origin === 'account'
   accountId?: string
   recurringSeriesId?: string
