@@ -8,12 +8,14 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { BalanceCard, OpenInvoicesCard } from "@/components/home/BalanceCards"
 import { MonthFlowCard } from "@/components/home/MonthFlowCard"
 import { UpcomingCard } from "@/components/home/UpcomingCard"
+import { TrialBanner } from "@/components/home/TrialBanner"
 import { useMonth } from "@/lib/month/MonthProvider"
 import { useAccounts } from "@/lib/hooks/useAccounts"
 import { useArchivedCards, useCards } from "@/lib/hooks/useCards"
 import { useOpenInvoices } from "@/lib/hooks/useInvoices"
 import { useMonthsTransactions } from "@/lib/hooks/useTransactions"
 import { useUserProfile } from "@/lib/hooks/useUserProfile"
+import { useNow } from "@/lib/hooks/useNow"
 import {
   getHiddenValues,
   getHiddenValuesOnServer,
@@ -21,6 +23,7 @@ import {
   toggleHiddenValues,
 } from "@/lib/ui/hiddenValues"
 import { sumMonthFlow } from "@/lib/domain/monthlyTotals"
+import { trialDaysRemaining } from "@/lib/domain/subscriptionAccess"
 import {
   buildUpcoming,
   countsAsOpenInvoice,
@@ -46,6 +49,7 @@ function greeting(hour: number): string {
 export default function InicioPage() {
   const { month } = useMonth()
   const { data: profile } = useUserProfile()
+  const now = useNow()
 
   // Frozen for the life of the screen: recomputing on every render would make the
   // window silently slide mid-session and the memos below churn.
@@ -160,6 +164,10 @@ export default function InicioPage() {
           {hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
         </Button>
       </div>
+
+      {profile?.subscriptionStatus === "free_trial" && (
+        <TrialBanner daysLeft={trialDaysRemaining(profile, now)} />
+      )}
 
       <BalanceCard
         balanceCents={summary.balanceCents}

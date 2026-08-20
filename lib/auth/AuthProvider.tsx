@@ -10,7 +10,8 @@ import {
 } from "firebase/auth"
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { auth } from "@/lib/firebase/client"
-import { seedNewUser } from "@/lib/firebase/seed"
+import { seedDefaultCategories } from "@/lib/firebase/seed"
+import { startTrial } from "@/lib/subscription/startTrial"
 
 type AuthContextValue = {
   user: User | null
@@ -41,7 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signUp(name: string, email: string, password: string) {
     const credential = await createUserWithEmailAndPassword(auth, email, password)
     await updateProfile(credential.user, { displayName: name })
-    await seedNewUser(credential.user.uid, credential.user.email, name)
+    await seedDefaultCategories(credential.user.uid)
+    // Creates the profile and starts the 7 free days. If it fails here — a dropped
+    // request, say — the account still exists and useEnsureTrial grants it on the
+    // next entry, so nobody ends up locked out by a network blip during signup.
+    await startTrial(credential.user, name)
   }
 
   async function signOut() {

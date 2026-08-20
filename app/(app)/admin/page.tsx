@@ -40,6 +40,7 @@ type AdminUser = {
 }
 
 const STATUS_LABELS: Record<string, string> = {
+  free_trial: "Teste grátis",
   exempt: "Acesso liberado",
   trialing: "Período de teste",
   active: "Ativa",

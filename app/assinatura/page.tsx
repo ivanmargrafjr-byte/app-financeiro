@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge"
 import { DeleteAccountCard } from "@/components/account/DeleteAccountCard"
 import { useAuth } from "@/lib/auth/AuthProvider"
 import { useUserProfile } from "@/lib/hooks/useUserProfile"
-import { ACTIVE_SUBSCRIPTION_STATUSES } from "@/lib/types"
+import { useNow } from "@/lib/hooks/useNow"
+import { hasAppAccess, trialDaysRemaining, TRIAL_DAYS } from "@/lib/domain/subscriptionAccess"
 import {
   configureRevenueCat,
   isIOSNativeApp,
@@ -23,6 +24,7 @@ import {
 
 const STATUS_LABELS: Record<string, string> = {
   exempt: "Acesso liberado",
+  free_trial: "Teste grátis",
   trialing: "Período de teste",
   active: "Ativa",
   past_due: "Pagamento pendente",
@@ -43,6 +45,7 @@ function AssinaturaContent() {
   const { data: profile, isLoading: profileLoading } = useUserProfile()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const now = useNow()
   const [submitting, setSubmitting] = useState(false)
   const [iosProduct, setIosProduct] = useState<PurchasesStoreProduct | null>(null)
   const isIOS = isIOSNativeApp()
@@ -71,13 +74,19 @@ function AssinaturaContent() {
   }, [isIOS, user])
 
   const status = profile?.subscriptionStatus ?? "none"
-  const hasAccess = ACTIVE_SUBSCRIPTION_STATUSES.includes(status)
+  const hasAccess = hasAppAccess(profile, now)
+  const daysLeft = trialDaysRemaining(profile, now)
+  const trialExpired = status === "free_trial" && !hasAccess
+  // Someone inside the free trial is usually here on purpose — to subscribe before
+  // it runs out — so this page stays open to them. Every other kind of access means
+  // a payment path just came through, and there is nothing left to do here.
+  const shouldLeave = hasAccess && status !== "free_trial"
 
   // Whichever path granted access (Stripe webhook or RevenueCat webhook), move on
   // as soon as Firestore reflects it — no need to know which one just fired.
   useEffect(() => {
-    if (hasAccess) router.replace("/inicio")
-  }, [hasAccess, router])
+    if (shouldLeave) router.replace("/inicio")
+  }, [shouldLeave, router])
 
   async function handleSubscribeStripe() {
     if (!user) return
@@ -164,22 +173,28 @@ function AssinaturaContent() {
             </CardTitle>
             <CardDescription>
               Assinatura mensal com renovação automática.{" "}
-              {hasAccess
-                ? "Sua conta tem acesso ao Finanças."
-                : "Assine para continuar usando o app."}
+              {trialExpired
+                ? `Seus ${TRIAL_DAYS} dias de teste terminaram. Assine para voltar a usar o app.`
+                : status === "free_trial"
+                  ? `Você está no teste grátis — ${daysLeft === 1 ? "falta 1 dia" : `faltam ${daysLeft} dias`}.`
+                  : hasAccess
+                    ? "Sua conta tem acesso ao Finanças."
+                    : "Assine para continuar usando o app."}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-4">
-            {!hasAccess && isIOS && (
+            {(!hasAccess || status === "free_trial") && isIOS && (
               <>
                 <p className="text-2xl font-semibold">
                   {iosProduct?.priceString ?? "R$ 19,90"}
                   <span className="text-muted-foreground text-sm font-normal">/mês</span>
                 </p>
+                {/* Only claims free days when the App Store actually offers them —
+                    the 7 free days now happen at signup, before any of this. */}
                 <p className="text-muted-foreground text-sm">
                   {iosProduct?.introPrice && iosProduct.introPrice.price === 0
                     ? `${iosProduct.introPrice.periodNumberOfUnits} dias grátis antes da primeira cobrança.`
-                    : "7 dias grátis antes da primeira cobrança."}
+                    : "Cancele quando quiser."}
                 </p>
                 <Button onClick={handleSubscribeIOS} disabled={submitting}>
                   {submitting ? "Processando..." : "Assinar"}
@@ -189,12 +204,15 @@ function AssinaturaContent() {
                 </Button>
               </>
             )}
-            {!hasAccess && !isIOS && (
+            {(!hasAccess || status === "free_trial") && !isIOS && (
               <>
                 <p className="text-2xl font-semibold">
                   R$ 19,90<span className="text-muted-foreground text-sm font-normal">/mês</span>
                 </p>
-                <p className="text-muted-foreground text-sm">7 dias grátis antes da primeira cobrança.</p>
+                <p className="text-muted-foreground text-sm">
+                  Cobrança na hora — seus {TRIAL_DAYS} dias grátis acontecem no cadastro, sem cartão.
+                  Cancele quando quiser.
+                </p>
                 <Button onClick={handleSubscribeStripe} disabled={submitting}>
                   {submitting ? "Abrindo..." : "Assinar"}
                 </Button>

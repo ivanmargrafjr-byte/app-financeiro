@@ -1,16 +1,7 @@
-import { doc, serverTimestamp, writeBatch } from "firebase/firestore"
+import { doc, writeBatch } from "firebase/firestore"
 import { db } from "./client"
-import { categoriesCol, userDocRef } from "./paths"
-import type { CategoryType, SubscriptionStatus } from "@/lib/types"
-
-const EXEMPT_EMAILS = (process.env.NEXT_PUBLIC_EXEMPT_EMAILS ?? "")
-  .split(",")
-  .map((e) => e.trim().toLowerCase())
-  .filter(Boolean)
-
-function initialSubscriptionStatus(email: string | null): SubscriptionStatus {
-  return email && EXEMPT_EMAILS.includes(email.toLowerCase()) ? "exempt" : "none"
-}
+import { categoriesCol } from "./paths"
+import type { CategoryType } from "@/lib/types"
 
 const DEFAULT_CATEGORIES: { name: string; type: CategoryType; icon: string; color: string }[] = [
   { name: "Salário", type: "receita", icon: "Wallet", color: "#16a34a" },
@@ -25,17 +16,15 @@ const DEFAULT_CATEGORIES: { name: string; type: CategoryType; icon: string; colo
   { name: "Outras despesas", type: "despesa", icon: "Receipt", color: "#64748b" },
 ]
 
-/** Creates the user's profile doc and seeds default categories. Safe to call only on first login. */
-export async function seedNewUser(uid: string, email: string | null, displayName: string | null) {
+/**
+ * Seeds the categories a new account starts with. Safe to call only on first login.
+ *
+ * The profile doc is deliberately not written here: it carries the fields that
+ * decide whether the account is paid for, and those are the server's to set — see
+ * app/api/trial/start/route.ts.
+ */
+export async function seedDefaultCategories(uid: string) {
   const batch = writeBatch(db)
-
-  batch.set(userDocRef(uid), {
-    email,
-    displayName,
-    createdAt: serverTimestamp(),
-    onboarded: true,
-    subscriptionStatus: initialSubscriptionStatus(email),
-  })
 
   const categoriesRef = categoriesCol(uid)
   for (const category of DEFAULT_CATEGORIES) {

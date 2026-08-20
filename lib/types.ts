@@ -173,6 +173,9 @@ export type Contract = {
 
 export type SubscriptionStatus =
   | "exempt"
+  /** The card-less 7-day trial granted at signup — bounded by `trialEndsAt`. */
+  | "free_trial"
+  /** Stripe's own trial, which the user reached by entering a card. */
   | "trialing"
   | "active"
   | "past_due"
@@ -185,9 +188,17 @@ export type UserProfile = {
   subscriptionStatus: SubscriptionStatus
   stripeCustomerId?: string
   stripeSubscriptionId?: string
+  /** Millis. Stamped once, the first time the free trial is granted, and never again. */
+  trialStartedAt?: number
+  /** Millis. What `free_trial` access is checked against — see lib/domain/subscriptionAccess.ts. */
+  trialEndsAt?: number
 }
 
-/** Statuses that grant access to the app. */
+/**
+ * Statuses that grant access on their own, with no clock involved. `free_trial` is
+ * deliberately absent: it only grants access until `trialEndsAt`, so asking whether
+ * someone can use the app goes through `hasAppAccess` in lib/domain/subscriptionAccess.ts.
+ */
 export const ACTIVE_SUBSCRIPTION_STATUSES: SubscriptionStatus[] = ["exempt", "trialing", "active"]
 
 export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {

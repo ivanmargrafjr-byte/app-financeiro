@@ -18,7 +18,8 @@ export async function POST(request: Request) {
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
-    subscription_data: { trial_period_days: 7 },
+    // No trial_period_days: the 7 free days now happen before this point, without a
+    // card. Keeping Stripe's trial too would hand out 14 free days for one promise.
     client_reference_id: authUser.uid,
     ...(existingCustomerId
       ? { customer: existingCustomerId }

@@ -79,8 +79,10 @@ export function LandingPage() {
             </Button>
           </div>
 
+          {/* "sem cartão" is the whole point of the change and the strongest thing
+              this line can say — it is also now literally true. */}
           <p className="text-muted-foreground text-sm">
-            7 dias grátis · depois R$ 19,90/mês · cancele quando quiser
+            7 dias grátis, sem cartão · depois R$ 19,90/mês · cancele quando quiser
           </p>
         </section>
 

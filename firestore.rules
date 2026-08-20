@@ -7,15 +7,29 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
+    // Everything that decides whether an account is paid for. These are written only
+    // with Admin SDK credentials — by the trial route and the Stripe/RevenueCat
+    // webhooks — which bypass these rules entirely. The client is refused on create
+    // as well as update: create used to be unrestricted, which meant a hand-made
+    // client could seed its own profile with an active subscription, or with a trial
+    // ending in the next century.
+    function billingFields() {
+      return [
+        'subscriptionStatus',
+        'stripeCustomerId',
+        'stripeSubscriptionId',
+        'trialStartedAt',
+        'trialEndsAt'
+      ];
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId);
-      allow create: if isOwner(userId);
-      // Subscription fields are only ever written by the Stripe webhook, which uses
-      // Admin SDK credentials and bypasses these rules entirely — block the client
-      // from setting its own billing status directly.
+      allow create: if isOwner(userId)
+                     && !request.resource.data.keys().hasAny(billingFields());
       allow update: if isOwner(userId)
                      && !request.resource.data.diff(resource.data).affectedKeys()
-                          .hasAny(['subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId']);
+                          .hasAny(billingFields());
 
       match /accounts/{accountId} {
         allow read, write: if isOwner(userId);
