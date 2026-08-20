@@ -13,7 +13,7 @@ export default function Home() {
   // to the login form — which is what an ad click landed on, with no explanation of
   // what this is and no way to reach the store listings.
   useEffect(() => {
-    if (!loading && user) router.replace("/dashboard")
+    if (!loading && user) router.replace("/inicio")
   }, [user, loading, router])
 
   if (loading || user) return null

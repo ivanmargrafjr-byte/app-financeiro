@@ -11,7 +11,7 @@ import { EntityIcon } from "@/components/forms/EntityIcon"
 import { useMonth } from "@/lib/month/MonthProvider"
 import { useMonthsTransactions } from "@/lib/hooks/useTransactions"
 import { useArchivedCards } from "@/lib/hooks/useCards"
-import { cardCountsInMonth } from "@/lib/domain/cardCutoff"
+import { countsInMonthlyTotals } from "@/lib/domain/monthlyTotals"
 import {
   monthsInPeriod,
   PERIOD_LABELS,
@@ -37,23 +37,7 @@ export default function DashboardPage() {
   const summary = useMemo(() => {
     const archivedById = new Map((archivedCards ?? []).map((c) => [c.id, c]))
 
-    // Entries paid via card keep their original doc as a checked historical marker,
-    // but the amount that actually counts lives in the card transaction on the
-    // invoice's due month — skip the marker here to avoid counting it twice.
-    // Invoice payments move money already counted via the invoice's card-origin
-    // purchases out of the account — also excluded to avoid double counting.
-    // Transfers move money between the user's own accounts, and balance adjustments
-    // are corrections whose effect is already in each account's current balance —
-    // both neutral, excluded here.
-    // A card replaced by a new one keeps its old entries for the months only it
-    // recorded, but from its cutoff month on they are a stale duplicate of what the
-    // replacement carries — see lib/domain/cardCutoff.ts.
-    const counts = (t: Transaction) =>
-      t.settledVia !== "card" &&
-      !t.isInvoicePayment &&
-      t.origin !== "transfer" &&
-      t.origin !== "adjustment" &&
-      cardCountsInMonth(archivedById.get(t.cardId ?? ""), t.competenceMonth)
+    const counts = (t: Transaction) => countsInMonthlyTotals(t, archivedById)
 
     const perMonth: MonthTotals[] = []
     const expenses: Transaction[] = []

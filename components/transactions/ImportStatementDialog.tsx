@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { flattenCategoryTree } from "@/lib/domain/categoryTree"
+import { formatDateBR } from "@/lib/domain/dateUtils"
 import { formatCentsBRL } from "@/lib/domain/money"
 import { suggestCategoryId } from "@/lib/domain/categorySuggestion"
 import { decodeOfxBytes, parseOfx, type OfxStatement } from "@/lib/domain/ofx"
@@ -267,7 +268,7 @@ export function ImportStatementDialog({
                 <p>
                   Saldo do extrato
                   {statement.ledgerBalanceDate &&
-                    ` em ${statement.ledgerBalanceDate.split("-").reverse().join("/")}`}
+                    ` em ${formatDateBR(statement.ledgerBalanceDate)}`}
                   : {formatCentsBRL(statement.ledgerBalanceCents)} · saldo da conta hoje:{" "}
                   {formatCentsBRL(account.currentBalanceCents)}
                 </p>
@@ -297,7 +298,7 @@ export function ImportStatementDialog({
                       />
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {row.date.split("-").reverse().join("/")}
+                      {formatDateBR(row.date)}
                     </TableCell>
                     <TableCell>
                       {KIND_LABEL[row.kind] && (

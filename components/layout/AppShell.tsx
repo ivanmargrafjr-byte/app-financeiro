@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import {
   CreditCard,
   FileText,
+  Home,
   LayoutDashboard,
   ListTree,
   LogOut,
@@ -26,6 +27,7 @@ import { Button } from "@/components/ui/button"
 import { MonthSwitcher } from "@/components/layout/MonthSwitcher"
 
 const NAV_ITEMS = [
+  { href: "/inicio", label: "Início", icon: Home },
   { href: "/dashboard", label: "Resumo", icon: LayoutDashboard },
   { href: "/contas", label: "Contas", icon: Wallet },
   { href: "/cartoes", label: "Cartões", icon: CreditCard },

@@ -96,3 +96,38 @@ export function monthLabel(month: MonthString): string {
   const label = MONTH_LABEL_FORMATTER.format(new Date(year, m - 1, 1))
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
+
+/**
+ * Walks a plain date forward or back by whole days. Goes through UTC on purpose:
+ * `new Date(y, m, d)` builds a local-midnight instant, and adding days across a DST
+ * boundary would land on 23:00 of the previous day and lose one.
+ */
+export function addDays(date: DateString, delta: number): DateString {
+  const { year, month, day } = parseDate(date)
+  const shifted = new Date(Date.UTC(year, month - 1, day + delta))
+  return formatDate(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate())
+}
+
+/** Last calendar day of the month a date falls in — 'YYYY-MM-DD'. */
+export function endOfMonth(date: DateString): DateString {
+  const { year, month } = parseDate(date)
+  return formatDate(year, month, daysInMonth(year, month))
+}
+
+/** '2026-08-19' → '19/08/2026', for display. */
+export function formatDateBR(date: DateString): DateString {
+  return date.split("-").reverse().join("/")
+}
+
+const SHORT_MONTH_NAME_FORMATTER = new Intl.DateTimeFormat("pt-BR", { month: "short" })
+
+/** Day and abbreviated month as separate pieces, for a compact two-line date badge. */
+export function dayMonthParts(date: DateString): { day: string; month: string } {
+  const { year, month, day } = parseDate(date)
+  return {
+    day: String(day).padStart(2, "0"),
+    month: SHORT_MONTH_NAME_FORMATTER.format(new Date(year, month - 1, day))
+      .replace(".", "")
+      .toUpperCase(),
+  }
+}

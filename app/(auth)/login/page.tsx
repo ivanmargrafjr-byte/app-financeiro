@@ -40,14 +40,14 @@ export default function LoginPage() {
   })
 
   useEffect(() => {
-    if (!loading && user) router.replace("/dashboard")
+    if (!loading && user) router.replace("/inicio")
   }, [user, loading, router])
 
   async function onSubmit(values: LoginFormValues) {
     setSubmitting(true)
     try {
       await signIn(values.email, values.password)
-      router.replace("/dashboard")
+      router.replace("/inicio")
     } catch (error) {
       toast.error(authErrorMessage(error))
     } finally {

@@ -76,7 +76,7 @@ function AssinaturaContent() {
   // Whichever path granted access (Stripe webhook or RevenueCat webhook), move on
   // as soon as Firestore reflects it — no need to know which one just fired.
   useEffect(() => {
-    if (hasAccess) router.replace("/dashboard")
+    if (hasAccess) router.replace("/inicio")
   }, [hasAccess, router])
 
   async function handleSubscribeStripe() {
@@ -206,7 +206,7 @@ function AssinaturaContent() {
               </Button>
             )}
             {hasAccess && (
-              <Button variant="ghost" onClick={() => router.replace("/dashboard")}>
+              <Button variant="ghost" onClick={() => router.replace("/inicio")}>
                 Ir para o app
               </Button>
             )}

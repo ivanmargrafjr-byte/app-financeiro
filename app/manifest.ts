@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Finanças — Controle financeiro pessoal",
     short_name: "Finanças",
     description: "Controle de contas, cartões de crédito e acompanhamento mensal",
-    start_url: "/dashboard",
+    start_url: "/inicio",
     display: "standalone",
     orientation: "portrait",
     background_color: "#ffffff",

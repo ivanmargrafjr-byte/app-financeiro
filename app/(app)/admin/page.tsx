@@ -70,7 +70,7 @@ export default function AdminPage() {
       return
     }
     if (!isAdminEmail(user.email)) {
-      router.replace("/dashboard")
+      router.replace("/inicio")
     }
   }, [authLoading, user, router])
 

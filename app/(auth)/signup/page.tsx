@@ -43,15 +43,15 @@ export default function SignupPage() {
     // Skip while a signup is in flight: createUserWithEmailAndPassword fires
     // onAuthStateChanged (making `user` truthy) before updateProfile/seedNewUser
     // finish, so this effect would otherwise race onSubmit's own redirect and send
-    // the user to /dashboard before their Firestore profile doc exists.
-    if (!loading && user && !submitting) router.replace("/dashboard")
+    // the user to /inicio before their Firestore profile doc exists.
+    if (!loading && user && !submitting) router.replace("/inicio")
   }, [user, loading, submitting, router])
 
   async function onSubmit(values: SignupFormValues) {
     setSubmitting(true)
     try {
       await signUp(values.name, values.email, values.password)
-      router.replace("/dashboard")
+      router.replace("/inicio")
     } catch (error) {
       toast.error(authErrorMessage(error))
     } finally {

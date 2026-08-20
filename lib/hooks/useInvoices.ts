@@ -189,6 +189,26 @@ export function useMonthInvoices(month: string) {
   })
 }
 
+/**
+ * Every invoice still to be paid, across all cards — the commitment the tela de
+ * início weighs the account balance against. Sorted by due date, so the next one
+ * to come out is first.
+ */
+export function useOpenInvoices() {
+  const { user } = useAuth()
+
+  return useQuery({
+    queryKey: ["invoices", "open", user?.uid],
+    enabled: !!user,
+    queryFn: async (): Promise<Invoice[]> => {
+      const snap = await getDocs(query(invoicesCol(user!.uid), where("status", "==", "open")))
+      return snap.docs
+        .map((d) => mapInvoiceDoc(d.id, d.data()))
+        .sort((a, b) => (a.dueDate < b.dueDate ? -1 : 1))
+    },
+  })
+}
+
 export function useInvoice(invoiceId: string) {
   const { user } = useAuth()
 
