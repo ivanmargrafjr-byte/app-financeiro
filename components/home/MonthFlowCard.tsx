@@ -34,8 +34,12 @@ export function MonthFlowCard({
           <ChevronRight className="size-3.5" />
         </Link>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-muted/50 grid gap-0.5 rounded-lg p-3">
+        {/* Side by side only once there is room for the figures. 360px is where two
+            columns still leave ~112px per box, enough for a six-figure amount at this
+            size; a Galaxy Fold's cover screen (~300px) would leave ~90px and the
+            values would spill over each other, so there they stack. */}
+        <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
+          <div className="bg-muted/50 grid min-w-0 gap-0.5 overflow-hidden rounded-lg p-3">
             <span className="text-muted-foreground flex items-center gap-1 text-xs">
               <ArrowDownLeft className="size-3.5 text-emerald-600 dark:text-emerald-400" />
               Entradas
@@ -47,7 +51,7 @@ export function MonthFlowCard({
               className="text-emerald-600 dark:text-emerald-400"
             />
           </div>
-          <div className="bg-muted/50 grid gap-0.5 rounded-lg p-3">
+          <div className="bg-muted/50 grid min-w-0 gap-0.5 overflow-hidden rounded-lg p-3">
             <span className="text-muted-foreground flex items-center gap-1 text-xs">
               <ArrowUpRight className="text-destructive size-3.5" />
               Saídas

@@ -1,11 +1,19 @@
 import { formatCentsBRL } from "@/lib/domain/money"
 import { cn } from "@/lib/utils"
 
+/**
+ * Sizes step up with the viewport rather than being fixed: a Galaxy Fold's cover
+ * screen is around 300px wide, where a figure set at text-xl runs past the box it
+ * sits in.
+ */
 const SIZES = {
   sm: { value: "text-sm font-medium", cents: "text-xs" },
-  md: { value: "text-xl font-semibold", cents: "text-sm" },
-  lg: { value: "text-2xl font-semibold", cents: "text-base" },
-  xl: { value: "text-3xl font-bold tracking-tight sm:text-4xl", cents: "text-lg sm:text-xl" },
+  md: { value: "text-base font-semibold min-[420px]:text-lg sm:text-xl", cents: "text-xs sm:text-sm" },
+  lg: { value: "text-xl font-semibold min-[380px]:text-2xl", cents: "text-sm min-[380px]:text-base" },
+  xl: {
+    value: "text-2xl font-bold tracking-tight min-[380px]:text-3xl sm:text-4xl",
+    cents: "text-base min-[380px]:text-lg sm:text-xl",
+  },
 } as const
 
 export type AmountSize = keyof typeof SIZES
