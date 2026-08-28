@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest"
 import {
   buildUpcoming,
   countsAsOpenInvoice,
+  estimateBalanceThrough,
+  estimateHorizon,
   projectBalanceToMonthEnd,
   sumOpenInvoicesCents,
 } from "./homeSummary"
@@ -227,5 +229,85 @@ describe("buildUpcoming", () => {
       color: "#820ad1",
       amountCents: 184726,
     })
+  })
+})
+
+describe("estimateHorizon", () => {
+  it("runs to the end of the month being viewed", () => {
+    expect(estimateHorizon(TODAY, "2026-10")).toBe("2026-10-31")
+  })
+
+  it("never falls back past the current month, so browsing back keeps today's picture", () => {
+    expect(estimateHorizon(TODAY, "2026-05")).toBe("2026-08-31")
+  })
+})
+
+describe("estimateBalanceThrough", () => {
+  const base = {
+    throughDate: "2026-08-31",
+    balanceCents: 500000,
+    transactions: [] as Transaction[],
+    openInvoices: [] as Invoice[],
+    cardsById: CARDS,
+  }
+
+  it("carries a pendência from an earlier month that was never efetivada", () => {
+    const result = estimateBalanceThrough({
+      ...base,
+      transactions: [tx({ id: "t-jul", date: "2026-07-10", competenceMonth: "2026-07" })],
+    })
+    expect(result).toBe(490000)
+  })
+
+  it("adds pending receitas and subtracts pending despesas alike", () => {
+    const result = estimateBalanceThrough({
+      ...base,
+      transactions: [
+        tx({ id: "t-in", direction: "in", amountCents: 30000 }),
+        tx({ id: "t-out", direction: "out", amountCents: 10000 }),
+      ],
+    })
+    expect(result).toBe(520000)
+  })
+
+  it("leaves out what falls due after the horizon", () => {
+    const result = estimateBalanceThrough({
+      ...base,
+      transactions: [tx({ id: "t-set", date: "2026-09-05", competenceMonth: "2026-09" })],
+    })
+    expect(result).toBe(500000)
+  })
+
+  it("ignores entries already efetivadas — the balance already has them", () => {
+    const result = estimateBalanceThrough({
+      ...base,
+      transactions: [tx({ id: "t-ok", settled: true })],
+    })
+    expect(result).toBe(500000)
+  })
+
+  it("does not count an invoice payment twice against its own fatura", () => {
+    const result = estimateBalanceThrough({
+      ...base,
+      transactions: [tx({ id: "t-pay", amountCents: 184726, isInvoicePayment: true })],
+      openInvoices: [invoice({ dueDate: "2026-08-10" })],
+    })
+    expect(result).toBe(500000 - 184726)
+  })
+
+  it("subtracts a fatura that came due in an earlier month and was never paid", () => {
+    const result = estimateBalanceThrough({
+      ...base,
+      openInvoices: [invoice({ id: "i-jul", referenceMonth: "2026-06", dueDate: "2026-07-01" })],
+    })
+    expect(result).toBe(500000 - 184726)
+  })
+
+  it("leaves out a fatura due after the horizon", () => {
+    const result = estimateBalanceThrough({
+      ...base,
+      openInvoices: [invoice({ id: "i-set", referenceMonth: "2026-09", dueDate: "2026-10-01" })],
+    })
+    expect(result).toBe(500000)
   })
 })

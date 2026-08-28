@@ -22,15 +22,17 @@ import { EntityIcon } from "@/components/forms/EntityIcon"
 import { useAccounts } from "@/lib/hooks/useAccounts"
 import { useArchivedCards, useCards } from "@/lib/hooks/useCards"
 import { useCategories } from "@/lib/hooks/useCategories"
-import { useMonthInvoices } from "@/lib/hooks/useInvoices"
+import { useMonthInvoices, useOpenInvoices } from "@/lib/hooks/useInvoices"
 import {
   useCreateAccountTransaction,
   useCreateTransfer,
   useMonthTransactions,
+  usePendingTransactions,
 } from "@/lib/hooks/useTransactions"
 import { formatCentsBRL } from "@/lib/domain/money"
-import { monthLabel } from "@/lib/domain/dateUtils"
+import { monthLabel, monthOfDate, todayDateString } from "@/lib/domain/dateUtils"
 import { cardCountsInMonth } from "@/lib/domain/cardCutoff"
+import { estimateBalanceThrough, estimateHorizon } from "@/lib/domain/homeSummary"
 import { useMonth } from "@/lib/month/MonthProvider"
 import type { AccountTransactionFormValues } from "@/lib/validators/transaction"
 import type { TransferFormValues } from "@/lib/validators/transfer"
@@ -43,10 +45,15 @@ export default function TransacoesPage() {
   const { data: archivedCards } = useArchivedCards()
   const { data: categories } = useCategories()
   const { data: invoices, isLoading: isLoadingInvoices } = useMonthInvoices(month)
+  const { data: pendingTransactions } = usePendingTransactions()
+  const { data: openInvoices } = useOpenInvoices()
   const createTransaction = useCreateAccountTransaction()
   const createTransfer = useCreateTransfer()
   const [open, setOpen] = useState(false)
   const [transferOpen, setTransferOpen] = useState(false)
+  // Frozen for the life of the screen, as on the tela de início: a date that moved
+  // mid-session would slide the estimate's horizon under the user.
+  const [today] = useState(() => todayDateString())
 
   // visibleTx below never includes origin==='card' entries, so this only ever looks up accounts.
   const sourceLabel = (tx: { accountId?: string }) =>
@@ -116,19 +123,27 @@ export default function TransacoesPage() {
   // fast once imported faturas add many line items). Click into a fatura to see them.
   const visibleTx = allTx.filter((t) => t.origin !== "card")
 
+  // Deliberately not built from the month's transactions like the list below: a
+  // pendência from an earlier month is still owed, and scoping the estimate to the
+  // viewed month made every one of them vanish when the month turned.
+  const horizonMonth = monthOfDate(estimateHorizon(today, month))
+
   const estimatedBalanceCents = useMemo(() => {
-    const realBalance = accounts?.reduce((acc, a) => acc + a.currentBalanceCents, 0) ?? 0
-    const pendingThisMonth = allTx
-      .filter((t) => t.origin === "account" && !t.settled)
-      .reduce((acc, t) => acc + (t.direction === "in" ? t.amountCents : -t.amountCents), 0)
-    // Open invoices haven't debited any account balance yet (paying one does, via
-    // usePayInvoice) — subtract them so the estimate reflects the money already
-    // committed to this month's faturas.
-    const openInvoicesCents = visibleInvoices
-      .filter((invoice) => invoice.status === "open")
-      .reduce((acc, invoice) => acc + invoice.totalAmountCents, 0)
-    return realBalance + pendingThisMonth - openInvoicesCents
-  }, [accounts, allTx, visibleInvoices])
+    const activeAccountIds = new Set((accounts ?? []).map((a) => a.id))
+    const cardsById = new Map([...(cards ?? []), ...(archivedCards ?? [])].map((c) => [c.id, c]))
+
+    return estimateBalanceThrough({
+      throughDate: estimateHorizon(today, month),
+      balanceCents: accounts?.reduce((acc, a) => acc + a.currentBalanceCents, 0) ?? 0,
+      // Same reasoning as allTx: an archived account's pendências must not move an
+      // estimate whose real balance no longer counts that account.
+      transactions: (pendingTransactions ?? []).filter(
+        (t) => !t.accountId || activeAccountIds.has(t.accountId)
+      ),
+      openInvoices: openInvoices ?? [],
+      cardsById,
+    })
+  }, [accounts, cards, archivedCards, pendingTransactions, openInvoices, today, month])
 
   return (
     <div className="grid grid-cols-1 gap-4">
@@ -179,8 +194,8 @@ export default function TransacoesPage() {
         <CardContent>
           <p className="text-2xl font-semibold">{formatCentsBRL(estimatedBalanceCents)}</p>
           <p className="text-muted-foreground text-xs">
-            Saldo atual das contas + lançamentos pendentes − faturas em aberto de{" "}
-            {monthLabel(month).toLowerCase()}
+            Saldo atual das contas + lançamentos pendentes − faturas em aberto, incluindo
+            o que está atrasado, até o fim de {monthLabel(horizonMonth).toLowerCase()}
           </p>
         </CardContent>
       </Card>

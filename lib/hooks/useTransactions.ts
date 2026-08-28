@@ -111,6 +111,31 @@ export function useMonthTransactions(month: string) {
   })
 }
 
+function pendingTransactionsQueryKey(uid: string | undefined) {
+  return ["transactions", "pending", uid]
+}
+
+/**
+ * Every lançamento still pending, in any month — what an estimate anchored to today
+ * needs, since a bill that went past its date and was never efetivado is money that
+ * will still leave. Docs written before `settled` existed carry no field and so never
+ * match, which is right: their effect is already baked into the account balance.
+ */
+export function usePendingTransactions() {
+  const { user } = useAuth()
+
+  return useQuery({
+    queryKey: pendingTransactionsQueryKey(user?.uid),
+    enabled: !!user,
+    queryFn: async (): Promise<Transaction[]> => {
+      const snap = await getDocs(query(transactionsCol(user!.uid), where("settled", "==", false)))
+      return snap.docs
+        .map((d) => mapTransactionDoc(d.id, d.data()))
+        .sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1))
+    },
+  })
+}
+
 export type MonthTransactions = { month: string; transactions: Transaction[] }
 
 /**

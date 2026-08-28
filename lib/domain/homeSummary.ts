@@ -8,7 +8,14 @@
  * would read like a fact about their money and be neither.
  */
 
-import { addDays, endOfMonth, type DateString } from "@/lib/domain/dateUtils"
+import {
+  addDays,
+  compareMonth,
+  endOfMonth,
+  monthOfDate,
+  type DateString,
+  type MonthString,
+} from "@/lib/domain/dateUtils"
 import { cardCountsInMonth } from "@/lib/domain/cardCutoff"
 import { DEFAULT_CATEGORY_COLOR } from "@/lib/types"
 import type { Card, Invoice, Transaction, TransactionDirection } from "@/lib/types"
@@ -74,11 +81,64 @@ export function projectBalanceToMonthEnd(input: {
 }): { throughDate: DateString; cents: number } {
   const throughDate = endOfMonth(input.today)
 
-  const pendingCents = input.transactions
+  return {
+    throughDate,
+    cents: input.balanceCents + sumPendingCommitmentsThrough(input.transactions, throughDate),
+  }
+}
+
+/** Every pending entry dated up to `throughDate`, signed — overdue ones included. */
+function sumPendingCommitmentsThrough(
+  transactions: Transaction[],
+  throughDate: DateString
+): number {
+  return transactions
     .filter((t) => isPendingCommitment(t) && t.date <= throughDate)
     .reduce((total, t) => total + (t.direction === "in" ? t.amountCents : -t.amountCents), 0)
+}
 
-  return { throughDate, cents: input.balanceCents + pendingCents }
+/**
+ * How far an estimate for `month` should look: the end of that month, but never
+ * earlier than the end of the current one. Paging back to a past month would
+ * otherwise drop commitments that are still owed today and inflate the number.
+ */
+export function estimateHorizon(today: DateString, month: MonthString): DateString {
+  const currentMonth = monthOfDate(today)
+  const furthest = compareMonth(month, currentMonth) > 0 ? month : currentMonth
+  return endOfMonth(`${furthest}-01`)
+}
+
+/**
+ * What the balance becomes once everything already committed through `throughDate`
+ * happens: the pending lançamentos, minus the invoices still open by then.
+ *
+ * Nothing here is scoped to a single month, and that is the point — a bill from
+ * August left unchecked is still owed in September. Summing only the viewed month's
+ * pending entries made the estimate forget every commitment as the month turned,
+ * flattering the number by exactly what was most overdue.
+ */
+export function estimateBalanceThrough(input: {
+  throughDate: DateString
+  balanceCents: number
+  transactions: Transaction[]
+  openInvoices: Invoice[]
+  cardsById: Map<string, Card>
+}): number {
+  // Open invoices have not debited any account yet (paying one does, via usePayInvoice),
+  // so they are subtracted here; an invoice that came due months ago and was never paid
+  // weighs the same as this month's.
+  const invoicesCents = input.openInvoices
+    .filter(
+      (invoice) =>
+        countsAsOpenInvoice(invoice, input.cardsById) && invoice.dueDate <= input.throughDate
+    )
+    .reduce((total, invoice) => total + invoice.totalAmountCents, 0)
+
+  return (
+    input.balanceCents +
+    sumPendingCommitmentsThrough(input.transactions, input.throughDate) -
+    invoicesCents
+  )
 }
 
 /**
