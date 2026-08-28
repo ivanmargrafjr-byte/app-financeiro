@@ -13,7 +13,7 @@ import { useMonth } from "@/lib/month/MonthProvider"
 import { useAccounts } from "@/lib/hooks/useAccounts"
 import { useArchivedCards, useCards } from "@/lib/hooks/useCards"
 import { useOpenInvoices } from "@/lib/hooks/useInvoices"
-import { useMonthsTransactions } from "@/lib/hooks/useTransactions"
+import { useMonthsTransactions, usePendingTransactions } from "@/lib/hooks/useTransactions"
 import { useUserProfile } from "@/lib/hooks/useUserProfile"
 import { useNow } from "@/lib/hooks/useNow"
 import {
@@ -33,7 +33,6 @@ import {
 } from "@/lib/domain/homeSummary"
 import {
   addDays,
-  addMonths,
   currentMonthString,
   monthLabel,
   monthOfDate,
@@ -65,13 +64,10 @@ export default function InicioPage() {
   const currentMonth = monthOfDate(today)
   const upcomingEndMonth = monthOfDate(addDays(today, UPCOMING_DAYS))
   // The Fluxo card follows the month switcher; everything else is anchored to today.
-  // The previous month is fetched too, so a bill that went past its date and was
-  // never checked still weighs on the projection.
+  // The projection no longer needs a month fetched for it — usePendingTransactions
+  // brings what is still owed from any month, however far back it goes.
   const months = useMemo(
-    () =>
-      Array.from(
-        new Set([addMonths(currentMonth, -1), currentMonth, upcomingEndMonth, month])
-      ),
+    () => Array.from(new Set([currentMonth, upcomingEndMonth, month])),
     [currentMonth, upcomingEndMonth, month]
   )
 
@@ -80,9 +76,15 @@ export default function InicioPage() {
   const { data: cards, isLoading: loadingCards } = useCards()
   const { data: archivedCards, isLoading: loadingArchived } = useArchivedCards()
   const { data: openInvoices, isLoading: loadingInvoices } = useOpenInvoices()
+  const { data: pendingTransactions, isLoading: loadingPending } = usePendingTransactions()
 
   const isLoading =
-    loadingTransactions || loadingAccounts || loadingCards || loadingArchived || loadingInvoices
+    loadingTransactions ||
+    loadingAccounts ||
+    loadingCards ||
+    loadingArchived ||
+    loadingInvoices ||
+    loadingPending
 
   const summary = useMemo(() => {
     const byMonth = new Map((monthsData ?? []).map((bucket) => [bucket.month, bucket.transactions]))
@@ -96,12 +98,14 @@ export default function InicioPage() {
 
     const flow = sumMonthFlow(byMonth.get(month) ?? [], archivedById)
 
-    // Deliberately not "every month fetched": which months those are depends on where
-    // the user paged to, and a projection that moved with browsing wouldn't be one.
-    const currentAndPrevious = [
-      ...(byMonth.get(addMonths(currentMonth, -1)) ?? []),
-      ...(byMonth.get(currentMonth) ?? []),
-    ]
+    // The projection takes what is still owed in any month, not the months this
+    // screen happened to fetch: which months those are depends on where the user
+    // paged to, and a projection that moved with browsing wouldn't be one. An
+    // archived account's entries drop out — its balance is not in balanceCents either.
+    const activeAccountIds = new Set((accounts ?? []).map((a) => a.id))
+    const pending = (pendingTransactions ?? []).filter(
+      (t) => !t.accountId || activeAccountIds.has(t.accountId)
+    )
 
     return {
       balanceCents,
@@ -112,7 +116,7 @@ export default function InicioPage() {
       projection: projectBalanceToMonthEnd({
         today,
         balanceCents,
-        transactions: currentAndPrevious,
+        transactions: pending,
       }),
       upcoming: buildUpcoming({
         today,
@@ -124,7 +128,18 @@ export default function InicioPage() {
         cardsById,
       }),
     }
-  }, [monthsData, accounts, cards, archivedCards, openInvoices, month, currentMonth, upcomingEndMonth, today])
+  }, [
+    monthsData,
+    accounts,
+    cards,
+    archivedCards,
+    openInvoices,
+    pendingTransactions,
+    month,
+    currentMonth,
+    upcomingEndMonth,
+    today,
+  ])
 
   const firstName = profile?.displayName?.trim().split(/\s+/)[0]
 
