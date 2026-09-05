@@ -3,6 +3,7 @@
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   updateProfile,
@@ -18,6 +19,7 @@ type AuthContextValue = {
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (name: string, email: string, password: string) => Promise<void>
+  sendPasswordReset: (email: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -49,12 +51,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await startTrial(credential.user, name)
   }
 
+  /**
+   * Sends Firebase's own reset e-mail, which lands on its hosted page — no
+   * actionCodeSettings, deliberately: a continue URL has to be listed under the
+   * project's authorized domains, and one missing entry fails the whole send.
+   */
+  async function sendPasswordReset(email: string) {
+    await sendPasswordResetEmail(auth, email)
+  }
+
   async function signOut() {
     await firebaseSignOut(auth)
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, sendPasswordReset, signOut }}>
       {children}
     </AuthContext.Provider>
   )

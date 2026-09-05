@@ -99,7 +99,15 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={submitting} className="mt-2">
+              <div className="-mt-2 flex justify-end">
+                <Link
+                  href="/recuperar-senha"
+                  className="text-muted-foreground text-sm underline underline-offset-4"
+                >
+                  Esqueci minha senha
+                </Link>
+              </div>
+              <Button type="submit" disabled={submitting}>
                 {submitting ? "Entrando..." : "Entrar"}
               </Button>
             </form>
