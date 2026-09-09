@@ -73,7 +73,7 @@ export function CategoryTransactionsDialog({
               {transactions.map((tx) => (
                 <div
                   key={tx.id}
-                  className="border-border flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5"
+                  className="border-border bg-muted flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5"
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-xs">{tx.description}</span>

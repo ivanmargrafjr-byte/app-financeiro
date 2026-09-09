@@ -214,7 +214,7 @@ export default function DashboardPage() {
                 key={c.categoryId}
                 type="button"
                 onClick={() => setSelectedCategory(c)}
-                className="hover:bg-muted flex items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors"
+                className="bg-muted hover:bg-muted-strong flex items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition-colors"
               >
                 <span className="flex items-center gap-2">
                   <EntityIcon name={c.icon} color={c.color} imageUrl={c.iconUrl} />

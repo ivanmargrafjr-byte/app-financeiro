@@ -43,7 +43,7 @@ function CategoryRow({
   return (
     <div
       className={
-        "border-border flex items-center justify-between rounded-md border px-3 py-2" +
+        "border-border bg-card flex items-center justify-between rounded-md border px-3 py-2" +
         (indented ? " ml-6" : "")
       }
     >

@@ -39,7 +39,7 @@ export function MonthFlowCard({
             size; a Galaxy Fold's cover screen (~300px) would leave ~90px and the
             values would spill over each other, so there they stack. */}
         <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
-          <div className="bg-muted/50 grid min-w-0 gap-0.5 overflow-hidden rounded-lg p-3">
+          <div className="bg-muted grid min-w-0 gap-0.5 overflow-hidden rounded-lg p-3">
             <span className="text-muted-foreground flex items-center gap-1 text-xs">
               <ArrowDownLeft className="size-3.5 text-emerald-600 dark:text-emerald-400" />
               Entradas
@@ -51,7 +51,7 @@ export function MonthFlowCard({
               className="text-emerald-600 dark:text-emerald-400"
             />
           </div>
-          <div className="bg-muted/50 grid min-w-0 gap-0.5 overflow-hidden rounded-lg p-3">
+          <div className="bg-muted grid min-w-0 gap-0.5 overflow-hidden rounded-lg p-3">
             <span className="text-muted-foreground flex items-center gap-1 text-xs">
               <ArrowUpRight className="text-destructive size-3.5" />
               Saídas

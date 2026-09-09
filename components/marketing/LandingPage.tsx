@@ -88,7 +88,7 @@ export function LandingPage() {
 
         <section className="grid gap-4 pb-16 sm:grid-cols-2">
           {FEATURES.map(({ icon: Icon, title, description }) => (
-            <div key={title} className="border-border grid gap-2 rounded-lg border p-5">
+            <div key={title} className="border-border bg-card grid gap-2 rounded-lg border p-5">
               <Icon className="text-muted-foreground size-5" />
               <h2 className="font-medium">{title}</h2>
               <p className="text-muted-foreground text-sm">{description}</p>

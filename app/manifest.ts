@@ -8,7 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/inicio",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#ffffff",
+    // A pedra do app, para a splash não piscar branco antes de assentar.
+    background_color: "#ededea",
     theme_color: "#0a0a0a",
     lang: "pt-BR",
     icons: [

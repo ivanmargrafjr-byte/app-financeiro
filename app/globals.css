@@ -30,6 +30,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
+  --color-muted-strong: var(--muted-strong);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
@@ -49,23 +50,43 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  /* Pedra e areia. O fundo tem cor e as superfícies são brancas, então card,
+     modal e input se destacam sozinhos — sem sombra, sem borda pesada. */
+  --pedra: #ededea;
+  /* A superfície não é branca: é a pedra clareada. Branco puro sobre um fundo
+     quente lê como recorte, não como papel — e foi o que incomodou na primeira
+     versão. Estes três degraus sobem sempre no mesmo sentido:
+     fundo #ededea → item interno #efeeea → card #f8f7f4. */
+  --pedra-clara: #efeeea;
+  --areia: #dddbd5;
+  /* Um degrau abaixo do item interno, para o hover continuar visível agora que o
+     card deixou de ser branco e a escada inteira ficou mais curta. */
+  --pedra-funda: #e7e6e1;
+  --superficie: #f8f7f4;
+  --tinta: #1f2328;
+  /* Cinza secundário escurecido até 4.6:1 sobre a pedra: o antigo passava em
+     branco e reprovava no fundo novo, e é ele que carrega quase todo o texto
+     de apoio do app. */
+  --tinta-fraca: #5e646c;
+
+  --background: var(--pedra);
+  --foreground: var(--tinta);
+  --card: var(--superficie);
+  --card-foreground: var(--tinta);
+  --popover: var(--superficie);
+  --popover-foreground: var(--tinta);
   --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: var(--pedra-clara);
+  --secondary-foreground: var(--tinta);
+  --muted: var(--pedra-clara);
+  --muted-foreground: var(--tinta-fraca);
+  --muted-strong: var(--pedra-funda);
+  --accent: var(--pedra-clara);
+  --accent-foreground: var(--tinta);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: var(--areia);
+  --input: var(--areia);
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -73,13 +94,13 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar: var(--pedra);
+  --sidebar-foreground: var(--tinta);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-accent: var(--pedra-clara);
+  --sidebar-accent-foreground: var(--tinta);
+  --sidebar-border: var(--areia);
   --sidebar-ring: oklch(0.708 0 0);
 }
 

@@ -110,7 +110,7 @@ export default function CardDetailPage({
           <Link
             key={invoice.id}
             href={`/cartoes/${cardId}/faturas/${invoice.id}`}
-            className="border-border flex items-center justify-between rounded-md border px-3 py-3 hover:bg-accent"
+            className="border-border bg-card flex items-center justify-between rounded-md border px-3 py-3 hover:bg-accent"
           >
             <div>
               <p className="text-sm font-medium capitalize">

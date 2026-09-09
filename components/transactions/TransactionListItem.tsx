@@ -113,7 +113,7 @@ export function TransactionListItem({
   }
 
   return (
-    <div className="border-border flex items-center justify-between gap-2 rounded-md border px-3 py-2">
+    <div className="border-border bg-card flex items-center justify-between gap-2 rounded-md border px-3 py-2">
       <div className="flex min-w-0 items-center gap-3">
         <EntityIcon name={tx.categoryIcon} color={tx.categoryColor} imageUrl={tx.categoryIconUrl} />
         <div className="min-w-0">

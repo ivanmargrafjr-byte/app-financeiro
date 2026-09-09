@@ -141,7 +141,7 @@ export default function RecorrentesPage() {
           return (
             <div
               key={rule.id}
-              className="border-border flex items-center justify-between rounded-md border px-3 py-2"
+              className="border-border bg-card flex items-center justify-between rounded-md border px-3 py-2"
             >
               <div>
                 <p className="flex items-center gap-2 text-sm font-medium">
