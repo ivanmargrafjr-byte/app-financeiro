@@ -21,6 +21,7 @@ import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth/AuthProvider"
 import { useMonth } from "@/lib/month/MonthProvider"
+import { isMonthScopedRoute } from "@/lib/month/monthScopedRoutes"
 import { useEnsureRecurringGenerated } from "@/lib/hooks/useRecurringRules"
 import { isAdminEmail } from "@/lib/admin/isAdmin"
 import { Button } from "@/components/ui/button"
@@ -43,7 +44,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter()
   const { user, signOut } = useAuth()
   const { month } = useMonth()
+  // Generation stays tied to the viewed month even where the switcher is hidden:
+  // those screens simply keep the current one.
   useEnsureRecurringGenerated(month)
+  const showsMonth = isMonthScopedRoute(pathname)
   const navItems = isAdminEmail(user?.email)
     ? [...NAV_ITEMS, { href: "/admin", label: "Admin", icon: Shield }]
     : NAV_ITEMS
@@ -94,8 +98,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="border-border flex flex-wrap items-center justify-between gap-2 border-b p-4">
-          <MonthSwitcher />
+        {/* With nothing but the mobile sign-out left in it, the bar is an empty
+            band on a desktop screen — so it goes away there entirely. */}
+        <header
+          className={cn(
+            "border-border flex flex-wrap items-center gap-2 border-b p-4",
+            showsMonth ? "justify-between" : "justify-end md:hidden"
+          )}
+        >
+          {showsMonth && <MonthSwitcher />}
           <Button variant="ghost" size="sm" className="md:hidden" onClick={handleSignOut}>
             <LogOut className="size-4" />
           </Button>
