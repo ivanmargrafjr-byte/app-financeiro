@@ -1,4 +1,4 @@
-# Finanças — Controle Financeiro Pessoal
+# Fôlego — Controle Financeiro Pessoal
 
 App web para controle financeiro pessoal: contas bancárias, cartões de crédito com faturas, categorias, transações recorrentes e compras parceladas, contratos, com acompanhamento mensal.
 

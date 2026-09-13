@@ -168,7 +168,7 @@ function AssinaturaContent() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              Finanças Premium Mensal
+              Fôlego Premium Mensal
               <Badge variant={hasAccess ? "secondary" : "outline"}>{STATUS_LABELS[status]}</Badge>
             </CardTitle>
             <CardDescription>
@@ -178,7 +178,7 @@ function AssinaturaContent() {
                 : status === "free_trial"
                   ? `Você está no teste grátis — ${daysLeft === 1 ? "falta 1 dia" : `faltam ${daysLeft} dias`}.`
                   : hasAccess
-                    ? "Sua conta tem acesso ao Finanças."
+                    ? "Sua conta tem acesso ao Fôlego."
                     : "Assine para continuar usando o app."}
             </CardDescription>
           </CardHeader>

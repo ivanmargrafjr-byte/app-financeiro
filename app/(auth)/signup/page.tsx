@@ -64,8 +64,8 @@ export default function SignupPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <Image
-            src="/logo-mark.png"
-            alt="Finanças"
+            src="/logo-folego.png"
+            alt="Fôlego"
             width={56}
             height={56}
             priority

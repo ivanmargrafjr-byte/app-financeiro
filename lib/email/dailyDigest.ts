@@ -74,7 +74,7 @@ function buildDigestHtml(
              <table style="width:100%;border-collapse:collapse;font-size:14px;">${invoicesRows}</table>`
           : ""
       }
-      <p style="color:#9ca3af;font-size:12px;margin-top:24px;">Enviado automaticamente pelo Finanças.</p>
+      <p style="color:#9ca3af;font-size:12px;margin-top:24px;">Enviado automaticamente pelo Fôlego.</p>
     </div>
   `
 }

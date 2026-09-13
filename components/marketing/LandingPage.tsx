@@ -40,8 +40,8 @@ export function LandingPage() {
     <div className="flex min-h-full flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
         <span className="flex items-center gap-2 text-lg font-semibold">
-          <Image src="/logo-mark.png" alt="" width={28} height={28} priority />
-          Finanças
+          <Image src="/logo-folego.png" alt="" width={28} height={28} priority />
+          Fôlego
         </span>
         <Link href="/login" className="text-muted-foreground text-sm hover:underline">
           Entrar

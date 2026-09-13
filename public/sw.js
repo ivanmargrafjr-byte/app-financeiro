@@ -1,9 +1,11 @@
 // Bumped whenever APP_SHELL changes: activate below drops every cache that isn't
 // this one, so the old shell never lingers on an installed app.
-const CACHE_NAME = "financas-shell-v2"
+const CACHE_NAME = "folego-shell-v3"
 // /inicio is the manifest's start_url — the page the installed app actually opens.
 // /dashboard stays because it is still reachable from the menu.
-const APP_SHELL = ["/inicio", "/dashboard", "/icon.png", "/logo-mark.png"]
+// cache.addAll rejects outright if a single entry 404s, and then the new worker never
+// installs — so renaming any asset listed here means updating this list with it.
+const APP_SHELL = ["/inicio", "/dashboard", "/icon.png", "/logo-folego.png"]
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)))

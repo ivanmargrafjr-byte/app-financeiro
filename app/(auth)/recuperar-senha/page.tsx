@@ -63,8 +63,8 @@ export default function RecuperarSenhaPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <Image
-            src="/logo-mark.png"
-            alt="Finanças"
+            src="/logo-folego.png"
+            alt="Fôlego"
             width={56}
             height={56}
             priority
@@ -82,7 +82,7 @@ export default function RecuperarSenhaPage() {
             <div className="grid grid-cols-1 gap-4">
               <p className="text-muted-foreground text-sm">
                 O link vale por um tempo limitado. Não esqueça de olhar a caixa de spam — o
-                e-mail é enviado pelo Firebase, em nome do Finanças.
+                e-mail é enviado pelo Firebase, em nome do Fôlego.
               </p>
               <Button nativeButton={false} render={<Link href="/login" />}>
                 Voltar para o login

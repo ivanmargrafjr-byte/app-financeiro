@@ -1,7 +1,7 @@
 import Link from "next/link"
 
 export const metadata = {
-  title: "Termos de Uso — Finanças",
+  title: "Termos de Uso — Fôlego",
 }
 
 export default function TermsOfServicePage() {
@@ -12,13 +12,14 @@ export default function TermsOfServicePage() {
       </Link>
 
       <h1 className="mt-6 text-2xl font-semibold">Termos de Uso</h1>
-      <p className="text-muted-foreground mt-1 mb-8 text-xs">Última atualização: julho de 2026</p>
+      <p className="text-muted-foreground mt-1 mb-8 text-xs">Última atualização: setembro de 2026</p>
 
       <div className="grid grid-cols-1 gap-6">
         <section>
           <h2 className="mb-2 text-base font-semibold">1. Sobre o serviço</h2>
           <p>
-            Finanças é um aplicativo de controle financeiro pessoal. Ao criar uma conta, você
+            Fôlego (anteriormente chamado Finanças) é um aplicativo de controle financeiro
+            pessoal. Ao criar uma conta, você
             concorda com estes Termos de Uso e com a nossa{" "}
             <Link href="/privacidade" className="underline">
               Política de Privacidade
@@ -59,7 +60,7 @@ export default function TermsOfServicePage() {
         <section>
           <h2 className="mb-2 text-base font-semibold">5. Isenção de responsabilidade</h2>
           <p>
-            O Finanças é uma ferramenta de organização financeira pessoal e não constitui
+            O Fôlego é uma ferramenta de organização financeira pessoal e não constitui
             aconselhamento financeiro, contábil ou de investimento. As funcionalidades de leitura
             automática de documentos por inteligência artificial podem ocasionalmente extrair
             dados incorretos — revise sempre os lançamentos antes de confirmá-los.

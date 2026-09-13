@@ -1,7 +1,7 @@
 import Link from "next/link"
 
 export const metadata = {
-  title: "Política de Privacidade — Finanças",
+  title: "Política de Privacidade — Fôlego",
 }
 
 export default function PrivacyPolicyPage() {
@@ -12,13 +12,14 @@ export default function PrivacyPolicyPage() {
       </Link>
 
       <h1 className="mt-6 text-2xl font-semibold">Política de Privacidade</h1>
-      <p className="text-muted-foreground mt-1 mb-8 text-xs">Última atualização: julho de 2026</p>
+      <p className="text-muted-foreground mt-1 mb-8 text-xs">Última atualização: setembro de 2026</p>
 
       <div className="grid grid-cols-1 gap-6">
         <section>
           <h2 className="mb-2 text-base font-semibold">1. Sobre este aplicativo</h2>
           <p>
-            Finanças é um aplicativo de controle financeiro pessoal, usado para registrar
+            Fôlego (anteriormente chamado Finanças) é um aplicativo de controle financeiro
+            pessoal, usado para registrar
             contas bancárias, cartões de crédito, transações, categorias e recorrências. Esta
             política explica quais dados o aplicativo coleta, como são usados e com quem podem
             ser compartilhados. Veja também os{" "}

@@ -15,10 +15,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Finanças — Controle financeiro pessoal",
+  title: "Fôlego — Controle financeiro pessoal",
   description: "Controle de contas, cartões de crédito e acompanhamento mensal",
   appleWebApp: {
-    title: "Finanças",
+    title: "Fôlego",
     statusBarStyle: "default",
   },
 };

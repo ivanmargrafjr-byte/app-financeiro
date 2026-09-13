@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Finanças — Controle financeiro pessoal",
-    short_name: "Finanças",
+    name: "Fôlego — Controle financeiro pessoal",
+    short_name: "Fôlego",
     description: "Controle de contas, cartões de crédito e acompanhamento mensal",
     start_url: "/inicio",
     display: "standalone",
