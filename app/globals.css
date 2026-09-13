@@ -68,6 +68,10 @@
      branco e reprovava no fundo novo, e é ele que carrega quase todo o texto
      de apoio do app. */
   --tinta-fraca: #5e646c;
+  /* O violeta do meio da carteira no ícone. Marca o item ativo do menu — o único
+     lugar em que a cor da marca aparece na interface, para continuar significando
+     "você está aqui". Branco sobre ele dá 8.4:1. */
+  --violeta: #5a12d6;
 
   --background: var(--pedra);
   --foreground: var(--tinta);
@@ -96,8 +100,8 @@
   --radius: 0.625rem;
   --sidebar: var(--pedra);
   --sidebar-foreground: var(--tinta);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: var(--violeta);
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: var(--pedra-clara);
   --sidebar-accent-foreground: var(--tinta);
   --sidebar-border: var(--areia);
