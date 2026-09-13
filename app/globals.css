@@ -68,9 +68,9 @@
      branco e reprovava no fundo novo, e é ele que carrega quase todo o texto
      de apoio do app. */
   --tinta-fraca: #5e646c;
-  /* O violeta do meio da carteira no ícone. Marca o item ativo do menu — o único
-     lugar em que a cor da marca aparece na interface, para continuar significando
-     "você está aqui". Branco sobre ele dá 8.4:1. */
+  /* O violeta do meio da carteira no ícone: a cor da marca, usada no item ativo do
+     menu e nas ações principais (botões, seleção, checkbox, switch). Branco sobre
+     ele dá 8.4:1; sobre a pedra, 7.2:1. */
   --violeta: #5a12d6;
 
   --background: var(--pedra);
@@ -79,8 +79,8 @@
   --card-foreground: var(--tinta);
   --popover: var(--superficie);
   --popover-foreground: var(--tinta);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: var(--violeta);
+  --primary-foreground: #ffffff;
   --secondary: var(--pedra-clara);
   --secondary-foreground: var(--tinta);
   --muted: var(--pedra-clara);
