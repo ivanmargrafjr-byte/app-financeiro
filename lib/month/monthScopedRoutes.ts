@@ -1,3 +1,5 @@
+import { isWithinRoute } from "@/lib/navigation/isWithinRoute"
+
 /**
  * The screens whose content actually changes with the month switcher — the only
  * ones that call `useMonth()`.
@@ -11,7 +13,5 @@
 export const MONTH_SCOPED_ROUTES = ["/inicio", "/dashboard", "/transacoes"] as const
 
 export function isMonthScopedRoute(pathname: string): boolean {
-  return MONTH_SCOPED_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  )
+  return MONTH_SCOPED_ROUTES.some((route) => isWithinRoute(pathname, route))
 }

@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/auth/AuthProvider"
 import { useMonth } from "@/lib/month/MonthProvider"
 import { isMonthScopedRoute } from "@/lib/month/monthScopedRoutes"
+import { isWithinRoute } from "@/lib/navigation/isWithinRoute"
 import { useEnsureRecurringGenerated } from "@/lib/hooks/useRecurringRules"
 import { isAdminEmail } from "@/lib/admin/isAdmin"
 import { Button } from "@/components/ui/button"
@@ -66,7 +67,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
         <nav className="flex flex-1 flex-row gap-1 overflow-x-auto md:flex-col md:overflow-visible">
           {navItems.map((item) => {
-            const active = pathname.startsWith(item.href)
+            const active = isWithinRoute(pathname, item.href)
             const Icon = item.icon
             return (
               <Link
