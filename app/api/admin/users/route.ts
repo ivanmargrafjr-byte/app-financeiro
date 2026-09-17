@@ -18,6 +18,9 @@ export async function GET(request: Request) {
       email: (data.email as string | null | undefined) ?? null,
       displayName: (data.displayName as string | null | undefined) ?? null,
       subscriptionStatus: (data.subscriptionStatus as string | undefined) ?? "none",
+      // Millis. Only free_trial reads it, but it is sent for every user: a past trial
+      // date explains how an account that is now "none" got there.
+      trialEndsAt: (data.trialEndsAt as number | undefined) ?? null,
       stripeCustomerId: (data.stripeCustomerId as string | undefined) ?? null,
     }
   })

@@ -26,7 +26,9 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useAuth } from "@/lib/auth/AuthProvider"
+import { useNow } from "@/lib/hooks/useNow"
 import { isAdminEmail } from "@/lib/admin/isAdmin"
+import { dateStringFromMillis, formatDateBR } from "@/lib/domain/dateUtils"
 
 /** Statuses an admin can set by hand — mirrors MANUAL_STATUSES on the API route. */
 type ManualStatus = "canceled" | "active" | "exempt" | "none"
@@ -37,6 +39,8 @@ type AdminUser = {
   displayName: string | null
   subscriptionStatus: string
   stripeCustomerId: string | null
+  /** Millis, when the account ever had the card-less trial. */
+  trialEndsAt: number | null
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -58,6 +62,7 @@ function statusVariant(status: string): "secondary" | "outline" | "destructive" 
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
+  const now = useNow()
   const [users, setUsers] = useState<AdminUser[] | null>(null)
   const [loadingUsers, setLoadingUsers] = useState(true)
   const [busyUid, setBusyUid] = useState<string | null>(null)
@@ -183,6 +188,14 @@ export default function AdminPage() {
                     <Badge variant={statusVariant(u.subscriptionStatus)}>
                       {STATUS_LABELS[u.subscriptionStatus] ?? u.subscriptionStatus}
                     </Badge>
+                    {u.subscriptionStatus === "free_trial" && u.trialEndsAt !== null && (
+                      // An expired trial keeps the free_trial status — the paywall is what
+                      // stops it — so the wording says which side of the date we are on.
+                      <p className="text-muted-foreground mt-1 text-xs whitespace-nowrap">
+                        {u.trialEndsAt >= now ? "termina" : "terminou"} em{" "}
+                        {formatDateBR(dateStringFromMillis(u.trialEndsAt))}
+                      </p>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">

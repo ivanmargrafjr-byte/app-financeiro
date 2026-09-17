@@ -115,6 +115,12 @@ export function endOfMonth(date: DateString): DateString {
 }
 
 /** '2026-08-19' → '19/08/2026', for display. */
+/** The local calendar day of a timestamp in millis — the day shown on the user's clock. */
+export function dateStringFromMillis(millis: number): DateString {
+  const d = new Date(millis)
+  return formatDate(d.getFullYear(), d.getMonth() + 1, d.getDate())
+}
+
 export function formatDateBR(date: DateString): DateString {
   return date.split("-").reverse().join("/")
 }
