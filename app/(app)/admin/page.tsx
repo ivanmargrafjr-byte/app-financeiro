@@ -28,7 +28,7 @@ import {
 import { useAuth } from "@/lib/auth/AuthProvider"
 import { useNow } from "@/lib/hooks/useNow"
 import { isAdminEmail } from "@/lib/admin/isAdmin"
-import { dateStringFromMillis, formatDateBR } from "@/lib/domain/dateUtils"
+import { adminStatusView } from "@/lib/admin/statusView"
 
 /** Statuses an admin can set by hand — mirrors MANUAL_STATUSES on the API route. */
 type ManualStatus = "canceled" | "active" | "exempt" | "none"
@@ -180,20 +180,18 @@ export default function AdminPage() {
             {users?.map((u) => {
               const blocked = u.subscriptionStatus === "canceled"
               const exempt = u.subscriptionStatus === "exempt"
+              const view = adminStatusView(u.subscriptionStatus, u.trialEndsAt, now)
               return (
                 <TableRow key={u.uid}>
                   <TableCell>{u.email ?? "—"}</TableCell>
                   <TableCell>{u.displayName ?? "—"}</TableCell>
                   <TableCell>
-                    <Badge variant={statusVariant(u.subscriptionStatus)}>
-                      {STATUS_LABELS[u.subscriptionStatus] ?? u.subscriptionStatus}
+                    <Badge variant={statusVariant(view.status)}>
+                      {STATUS_LABELS[view.status] ?? view.status}
                     </Badge>
-                    {u.subscriptionStatus === "free_trial" && u.trialEndsAt !== null && (
-                      // An expired trial keeps the free_trial status — the paywall is what
-                      // stops it — so the wording says which side of the date we are on.
+                    {view.trialLine && (
                       <p className="text-muted-foreground mt-1 text-xs whitespace-nowrap">
-                        {u.trialEndsAt >= now ? "termina" : "terminou"} em{" "}
-                        {formatDateBR(dateStringFromMillis(u.trialEndsAt))}
+                        {view.trialLine}
                       </p>
                     )}
                   </TableCell>
