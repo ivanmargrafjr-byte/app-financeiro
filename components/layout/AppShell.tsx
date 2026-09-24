@@ -8,6 +8,7 @@ import {
   FileText,
   Home,
   LayoutDashboard,
+  LineChart,
   ListTree,
   LogOut,
   Repeat,
@@ -31,6 +32,7 @@ import { MonthSwitcher } from "@/components/layout/MonthSwitcher"
 const NAV_ITEMS = [
   { href: "/inicio", label: "Início", icon: Home },
   { href: "/dashboard", label: "Resumo", icon: LayoutDashboard },
+  { href: "/fluxo", label: "Fluxo", icon: LineChart },
   { href: "/contas", label: "Contas", icon: Wallet },
   { href: "/cartoes", label: "Cartões", icon: CreditCard },
   { href: "/transacoes", label: "Transações", icon: ListTree },
