@@ -34,6 +34,13 @@ export function budgetDocRef(uid: string, categoryId: string) {
   return doc(db, "users", uid, "budgets", categoryId)
 }
 
+export function goalsCol(uid: string) {
+  return collection(db, "users", uid, "goals")
+}
+export function goalDocRef(uid: string, goalId: string) {
+  return doc(db, "users", uid, "goals", goalId)
+}
+
 export function transactionsCol(uid: string) {
   return collection(db, "users", uid, "transactions")
 }

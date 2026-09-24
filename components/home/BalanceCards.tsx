@@ -68,6 +68,9 @@ export function BalanceCard({
               hidden={hidden}
             />
             <BreakdownRow label="Faturas em aberto" cents={-free.invoicesCents} hidden={hidden} />
+            {free.goalsCents > 0 && (
+              <BreakdownRow label="Guardado em metas" cents={-free.goalsCents} hidden={hidden} />
+            )}
             <BreakdownRow
               label="Reservado"
               cents={-free.reservedCents}

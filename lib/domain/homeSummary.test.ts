@@ -321,6 +321,7 @@ describe("freeToSpend", () => {
     openInvoices: [] as Invoice[],
     cardsById: CARDS,
     reservedCents: 0,
+    goalsCents: 0,
   }
 
   it("takes out what is already committed, the open invoices and the reserve", () => {
@@ -386,6 +387,13 @@ describe("freeToSpend", () => {
     })
 
     expect(result.cents).toBe(500000)
+  })
+
+  it("takes out what is already put away for goals", () => {
+    const result = freeToSpend({ ...base, goalsCents: 150000 })
+
+    expect(result.goalsCents).toBe(150000)
+    expect(result.cents).toBe(350000)
   })
 
   it("treats a negative reserve as none, rather than handing out free money", () => {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Pencil, Plus, Trash2 } from "lucide-react"
+import { PiggyBank, Pencil, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -17,13 +17,25 @@ import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Amount } from "@/components/home/Amount"
 import { BudgetLines } from "@/components/budgets/BudgetLines"
+import { GoalDialog } from "@/components/budgets/GoalDialog"
+import { GoalList } from "@/components/budgets/GoalList"
+import { SaveIntoGoalDialog } from "@/components/budgets/SaveIntoGoalDialog"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { useCategories } from "@/lib/hooks/useCategories"
 import { useArchivedCards } from "@/lib/hooks/useCards"
 import { useMonthTransactions } from "@/lib/hooks/useTransactions"
 import { useBudgets, useDeleteBudget, useSetBudget } from "@/lib/hooks/useBudgets"
+import {
+  useCreateGoal,
+  useDeleteGoal,
+  useGoals,
+  useSaveIntoGoal,
+  useUpdateGoal,
+  type GoalInput,
+} from "@/lib/hooks/useGoals"
 import { useMonth } from "@/lib/month/MonthProvider"
 import { buildBudgetLines, sumBudgets } from "@/lib/domain/budget"
+import { sumMonthly, sumSaved, type Goal, type GoalKind } from "@/lib/domain/goals"
 import { monthLabel, todayDateString } from "@/lib/domain/dateUtils"
 import { fromCents, toCents } from "@/lib/domain/money"
 import type { Category } from "@/lib/types"
@@ -38,6 +50,14 @@ export default function OrcamentosPage() {
   const setBudget = useSetBudget()
   const deleteBudget = useDeleteBudget()
 
+  const { data: goals } = useGoals()
+  const createGoal = useCreateGoal()
+  const updateGoal = useUpdateGoal()
+  const deleteGoal = useDeleteGoal()
+  const saveIntoGoal = useSaveIntoGoal()
+
+  const [goalDialog, setGoalDialog] = useState<{ kind: GoalKind; goal: Goal | null } | null>(null)
+  const [saving, setSaving] = useState<Goal | null>(null)
   const [editing, setEditing] = useState<Category | null>(null)
   const [value, setValue] = useState("")
   const [picking, setPicking] = useState(false)
@@ -57,6 +77,17 @@ export default function OrcamentosPage() {
     [budgets, categories, transactions, archivedCards, month, today]
   )
   const totals = sumBudgets(lines)
+
+  const metas = (goals ?? []).filter((g) => g.kind === "meta")
+  const anuais = (goals ?? []).filter((g) => g.kind === "anual")
+  const savedTotal = sumSaved(goals ?? [])
+  const monthlyEffort = sumMonthly(goals ?? [], today)
+
+  async function submitGoal(input: GoalInput) {
+    if (goalDialog?.goal) await updateGoal.mutateAsync({ id: goalDialog.goal.id, ...input })
+    else await createGoal.mutateAsync(input)
+    toast.success("Salvo")
+  }
 
   const withoutBudget = (categories ?? []).filter(
     (c) => c.type === "despesa" && !budgets?.some((b) => b.categoryId === c.id)
@@ -158,6 +189,114 @@ export default function OrcamentosPage() {
           />
         </>
       )}
+
+      <div className="mt-2 grid gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-base font-semibold">Metas</h2>
+          <Button variant="outline" size="sm" onClick={() => setGoalDialog({ kind: "meta", goal: null })}>
+            <Plus className="size-4" />
+            Nova meta
+          </Button>
+        </div>
+        <GoalList
+          goals={metas}
+          today={today}
+          emptyLabel="Nenhuma meta ainda. Diga quanto quer juntar e até quando, e o app calcula o quanto guardar por mês."
+          action={(goal) => (
+            <span className="flex items-center gap-1.5">
+              <button
+                type="button"
+                aria-label={`Guardar em ${goal.name}`}
+                onClick={() => setSaving(goal)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <PiggyBank className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                aria-label={`Editar ${goal.name}`}
+                onClick={() => setGoalDialog({ kind: goal.kind, goal })}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Pencil className="size-3.5" />
+              </button>
+            </span>
+          )}
+        />
+      </div>
+
+      <div className="grid gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-base font-semibold">Despesas anuais</h2>
+          <Button variant="outline" size="sm" onClick={() => setGoalDialog({ kind: "anual", goal: null })}>
+            <Plus className="size-4" />
+            Nova despesa
+          </Button>
+        </div>
+        <GoalList
+          goals={anuais}
+          today={today}
+          emptyLabel="Seguro, IPVA, matrícula: cadastre o valor e a data, e o app mostra quanto separar por mês para não ser pego de surpresa."
+          action={(goal) => (
+            <span className="flex items-center gap-1.5">
+              <button
+                type="button"
+                aria-label={`Guardar em ${goal.name}`}
+                onClick={() => setSaving(goal)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <PiggyBank className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                aria-label={`Editar ${goal.name}`}
+                onClick={() => setGoalDialog({ kind: goal.kind, goal })}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Pencil className="size-3.5" />
+              </button>
+            </span>
+          )}
+        />
+        {(metas.length > 0 || anuais.length > 0) && (
+          <p className="text-muted-foreground text-xs">
+            Guardado no total: <Amount cents={savedTotal} size="sm" /> · esforço deste mês:{" "}
+            <Amount cents={monthlyEffort} size="sm" />. O dinheiro continua nas suas contas — ele
+            só deixa de contar como livre para gastar na tela de início.
+          </p>
+        )}
+      </div>
+
+      <SaveIntoGoalDialog
+        key={`guardar-${saving?.id ?? "none"}`}
+        goal={saving}
+        today={today}
+        open={!!saving}
+        onOpenChange={(open) => !open && setSaving(null)}
+        submitting={saveIntoGoal.isPending}
+        onSave={async (deltaCents) => {
+          if (saving) await saveIntoGoal.mutateAsync({ id: saving.id, deltaCents })
+        }}
+      />
+
+      <GoalDialog
+        key={`meta-${goalDialog?.goal?.id ?? goalDialog?.kind ?? "none"}`}
+        kind={goalDialog?.kind ?? "meta"}
+        goal={goalDialog?.goal}
+        open={!!goalDialog}
+        onOpenChange={(open) => !open && setGoalDialog(null)}
+        onSubmit={submitGoal}
+        submitting={createGoal.isPending || updateGoal.isPending}
+        onDelete={
+          goalDialog?.goal
+            ? async () => {
+                await deleteGoal.mutateAsync(goalDialog.goal!.id)
+                toast.success("Excluído")
+                setGoalDialog(null)
+              }
+            : undefined
+        }
+      />
 
       <Dialog open={picking} onOpenChange={setPicking}>
         <DialogContent>

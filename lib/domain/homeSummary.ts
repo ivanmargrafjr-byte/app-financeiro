@@ -151,6 +151,8 @@ export type FreeToSpend = {
   invoicesCents: number
   /** What the person chose to keep untouched, as a positive number. */
   reservedCents: number
+  /** Already put away for goals and annual bills, as a positive number. */
+  goalsCents: number
   /** Pending inflows — shown apart on purpose, never added to `cents`. */
   expectedIncomeCents: number
   /** What is actually free to spend; negative when the commitments outrun the money. */
@@ -177,6 +179,7 @@ export function freeToSpend(input: {
   openInvoices: Invoice[]
   cardsById: Map<string, Card>
   reservedCents?: number
+  goalsCents?: number
 }): FreeToSpend {
   const due = input.transactions.filter(
     (t) => isPendingCommitment(t) && t.date <= input.throughDate
@@ -196,6 +199,9 @@ export function freeToSpend(input: {
     .reduce((total, invoice) => total + invoice.totalAmountCents, 0)
 
   const reservedCents = Math.max(0, input.reservedCents ?? 0)
+  // Money put away for a goal is still in the account, and still not available: the
+  // whole point of saving for the IPVA is that this money is not for groceries.
+  const goalsCents = Math.max(0, input.goalsCents ?? 0)
 
   return {
     throughDate: input.throughDate,
@@ -203,8 +209,9 @@ export function freeToSpend(input: {
     committedCents,
     invoicesCents,
     reservedCents,
+    goalsCents,
     expectedIncomeCents,
-    cents: input.balanceCents - committedCents - invoicesCents - reservedCents,
+    cents: input.balanceCents - committedCents - invoicesCents - reservedCents - goalsCents,
   }
 }
 

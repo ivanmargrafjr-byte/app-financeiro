@@ -44,6 +44,11 @@ service cloud.firestore {
       match /budgets/{budgetId} {
         allow read, write: if isOwner(userId);
       }
+
+      // Goals and known annual bills: an amount, a date and what is already put away.
+      match /goals/{goalId} {
+        allow read, write: if isOwner(userId);
+      }
       match /transactions/{transactionId} {
         allow read: if isOwner(userId);
         allow create: if isOwner(userId)

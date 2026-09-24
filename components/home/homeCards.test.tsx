@@ -44,6 +44,7 @@ describe("BalanceCard", () => {
     committedCents: 50000,
     invoicesCents: 134726,
     reservedCents: 0,
+    goalsCents: 0,
     expectedIncomeCents: 0,
     cents: 613196,
   }

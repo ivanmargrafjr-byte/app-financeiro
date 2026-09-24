@@ -15,6 +15,7 @@ import { useAccounts } from "@/lib/hooks/useAccounts"
 import { useArchivedCards, useCards } from "@/lib/hooks/useCards"
 import { useOpenInvoices } from "@/lib/hooks/useInvoices"
 import { useMonthsTransactions, usePendingTransactions } from "@/lib/hooks/useTransactions"
+import { useGoals } from "@/lib/hooks/useGoals"
 import { useUserProfile } from "@/lib/hooks/useUserProfile"
 import { useNow } from "@/lib/hooks/useNow"
 import {
@@ -24,6 +25,7 @@ import {
   toggleHiddenValues,
 } from "@/lib/ui/hiddenValues"
 import { sumMonthFlow } from "@/lib/domain/monthlyTotals"
+import { sumSaved } from "@/lib/domain/goals"
 import { trialDaysRemaining } from "@/lib/domain/subscriptionAccess"
 import {
   buildUpcoming,
@@ -80,6 +82,7 @@ export default function InicioPage() {
   const { data: archivedCards, isLoading: loadingArchived } = useArchivedCards()
   const { data: openInvoices, isLoading: loadingInvoices } = useOpenInvoices()
   const { data: pendingTransactions, isLoading: loadingPending } = usePendingTransactions()
+  const { data: goals } = useGoals()
 
   const isLoading =
     loadingTransactions ||
@@ -121,6 +124,7 @@ export default function InicioPage() {
         openInvoices: openInvoices ?? [],
         cardsById,
         reservedCents: profile?.reservedCents,
+        goalsCents: sumSaved(goals ?? []),
       }),
       invoicesCents,
       invoiceCount: invoices.length,
@@ -145,6 +149,7 @@ export default function InicioPage() {
     monthsData,
     accounts,
     profile?.reservedCents,
+    goals,
     cards,
     archivedCards,
     openInvoices,
