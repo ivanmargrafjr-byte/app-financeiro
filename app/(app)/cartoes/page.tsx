@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { MoreVertical, Plus } from "lucide-react"
 import { toast } from "sonner"
@@ -20,9 +20,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { CardForm } from "@/components/forms/CardForm"
+import { CommitmentMonths } from "@/components/cards/CommitmentMonths"
+import { InstallmentPlans } from "@/components/cards/InstallmentPlans"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatCentsBRL, fromCents } from "@/lib/domain/money"
+import { useOpenInvoices } from "@/lib/hooks/useInvoices"
+import { useInstallmentTransactions } from "@/lib/hooks/useTransactions"
+import {
+  cardUsage,
+  commitmentByMonth,
+  openInstallmentPlans,
+} from "@/lib/domain/cardCommitment"
+import { currentMonthString } from "@/lib/domain/dateUtils"
 import type { Card as CardEntity } from "@/lib/types"
 import {
   useArchivedCards,
@@ -45,6 +55,27 @@ export default function CartoesPage() {
   const [open, setOpen] = useState(false)
   const [editingCard, setEditingCard] = useState<CardEntity | null>(null)
   const [showArchived, setShowArchived] = useState(false)
+  const { data: openInvoices } = useOpenInvoices()
+  const { data: installments } = useInstallmentTransactions()
+
+  const commitment = useMemo(() => {
+    const active = cards ?? []
+    const invoices = openInvoices ?? []
+    const cardsById = new Map(
+      [...active, ...(archivedCards ?? [])].map((c) => [c.id, c])
+    )
+    return {
+      months: commitmentByMonth({
+        invoices,
+        cardsById,
+        fromMonth: currentMonthString(),
+        months: 6,
+      }),
+      usageByCard: new Map(cardUsage(active, invoices).map((u) => [u.card.id, u])),
+      plans: openInstallmentPlans(installments ?? [], new Set(invoices.map((i) => i.id))),
+      cardNameById: new Map([...cardsById].map(([id, c]) => [id, c.name])),
+    }
+  }, [cards, archivedCards, openInvoices, installments])
 
   async function handleCreate(values: Parameters<typeof createCard.mutateAsync>[0]) {
     try {
@@ -150,6 +181,34 @@ export default function CartoesPage() {
         </p>
       )}
 
+      {!isLoading && !!cards?.length && (
+        <div className="grid gap-3 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-muted-foreground text-sm font-medium">
+                Comprometido nos próximos meses
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CommitmentMonths months={commitment.months} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-muted-foreground text-sm font-medium">
+                Parcelamentos em andamento
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <InstallmentPlans
+                plans={commitment.plans}
+                cardNameById={commitment.cardNameById}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {cards?.map((card) => (
           <Card key={card.id}>
@@ -179,9 +238,40 @@ export default function CartoesPage() {
               </DropdownMenu>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground text-sm">
-                Limite {formatCentsBRL(card.limitCents)}
-              </p>
+              {(() => {
+                const usage = commitment.usageByCard.get(card.id)
+                const committed = usage?.committedCents ?? 0
+                const available = usage?.availableCents ?? card.limitCents
+                return (
+                  <div className="grid gap-1">
+                    <div className="bg-muted h-1.5 overflow-hidden rounded-full">
+                      <div
+                        className={
+                          available < 0 ? "bg-destructive h-full" : "bg-primary h-full"
+                        }
+                        style={{ width: `${(usage?.usedRatio ?? 0) * 100}%` }}
+                      />
+                    </div>
+                    {/* What the app knows is owed, not what the bank reports: a purchase
+                        that never reached the app is missing from both sides. */}
+                    <p className="text-muted-foreground text-sm">
+                      {formatCentsBRL(committed)} em faturas abertas de{" "}
+                      {formatCentsBRL(card.limitCents)}
+                    </p>
+                    <p
+                      className={
+                        available < 0
+                          ? "text-destructive text-sm"
+                          : "text-muted-foreground text-sm"
+                      }
+                    >
+                      {available < 0
+                        ? `${formatCentsBRL(Math.abs(available))} acima do limite`
+                        : `${formatCentsBRL(available)} de limite livre`}
+                    </p>
+                  </div>
+                )
+              })()}
               <p className="text-muted-foreground text-sm">
                 Fecha dia {card.closingDay} · Vence dia {card.dueDay}
               </p>

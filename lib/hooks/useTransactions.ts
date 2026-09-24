@@ -136,6 +136,30 @@ export function usePendingTransactions() {
   })
 }
 
+function installmentTransactionsQueryKey(uid: string | undefined) {
+  return ["transactions", "installments", uid]
+}
+
+/**
+ * Every parcel of every instalment, in any month.
+ *
+ * The range filter is what selects them: `installmentTotal` is written only on split
+ * purchases, and Firestore leaves out documents that lack the field entirely — so
+ * this reads the instalments without scanning the whole collection.
+ */
+export function useInstallmentTransactions() {
+  const { user } = useAuth()
+
+  return useQuery({
+    queryKey: installmentTransactionsQueryKey(user?.uid),
+    enabled: !!user,
+    queryFn: async (): Promise<Transaction[]> => {
+      const snap = await getDocs(query(transactionsCol(user!.uid), where("installmentTotal", ">", 1)))
+      return snap.docs.map((d) => mapTransactionDoc(d.id, d.data()))
+    },
+  })
+}
+
 export type MonthTransactions = { month: string; transactions: Transaction[] }
 
 /**
