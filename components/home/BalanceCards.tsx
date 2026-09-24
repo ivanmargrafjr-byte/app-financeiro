@@ -1,65 +1,123 @@
+"use client"
+
+import { useState } from "react"
 import Link from "next/link"
-import { ChevronRight, CreditCard, Wallet } from "lucide-react"
+import { ChevronDown, ChevronRight, CreditCard, Wallet } from "lucide-react"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Amount } from "@/components/home/Amount"
 import { formatDateBR } from "@/lib/domain/dateUtils"
+import { cn } from "@/lib/utils"
+import type { FreeToSpend } from "@/lib/domain/homeSummary"
 
 /**
- * What is in the accounts right now, and — the number that actually answers "can I
- * spend this?" — what is left of it once the open invoices are paid. Showing the
- * balance alone is how a card bill becomes a surprise.
+ * How much of the money is actually free to spend, and where the rest of it went.
+ *
+ * The balance alone answers the wrong question — it is the number that turns a card
+ * bill into a surprise. What is left after the commitments is the figure someone is
+ * really asking for, so it is the one set large; the balance stays underneath as the
+ * fact it came from, and the breakdown opens for anyone who wants to check the maths.
  */
 export function BalanceCard({
-  balanceCents,
-  freeCents,
+  free,
   hidden,
+  reserveAction,
 }: {
-  balanceCents: number
-  /** Balance minus every open invoice; negative when the cards outrun the accounts. */
-  freeCents: number
+  free: FreeToSpend
   hidden: boolean
+  /** Passed in rather than imported: it talks to Firestore, and this file stays pure. */
+  reserveAction?: React.ReactNode
 }) {
+  const [open, setOpen] = useState(false)
+  const throughLabel = formatDateBR(free.throughDate)
+  const negative = free.cents < 0
+
   return (
     <Card>
       <CardContent className="grid gap-1">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="text-muted-foreground flex items-center gap-1.5 text-sm hover:underline"
+        >
+          <Wallet className="size-4" />
+          Livre para gastar até {throughLabel}
+          <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} />
+        </button>
+        <Amount
+          cents={free.cents}
+          hidden={hidden}
+          size="xl"
+          className={negative ? "text-destructive" : undefined}
+        />
         <Link
           href="/contas"
           className="text-muted-foreground flex items-center gap-1.5 text-sm hover:underline"
         >
-          <Wallet className="size-4" />
-          Saldo nas contas
+          de <Amount cents={free.balanceCents} hidden={hidden} size="sm" /> nas contas
           <ChevronRight className="size-3.5" />
         </Link>
-        <Amount cents={balanceCents} hidden={hidden} size="xl" />
-        <p className="text-muted-foreground text-sm">
-          {freeCents >= 0 ? (
-            <>
-              <Amount
-                cents={freeCents}
-                hidden={hidden}
-                size="sm"
-                approximate
-                className="text-emerald-600 dark:text-emerald-400"
-              />{" "}
-              livres depois de pagar as faturas
-            </>
-          ) : (
-            <>
-              faltam{" "}
-              <Amount
-                cents={Math.abs(freeCents)}
-                hidden={hidden}
-                size="sm"
-                approximate
-                className="text-destructive"
-              />{" "}
-              para cobrir as faturas em aberto
-            </>
-          )}
-        </p>
+
+        {open && (
+          <dl className="bg-muted mt-2 grid gap-1.5 rounded-lg p-3 text-xs">
+            <BreakdownRow label="Saldo nas contas" cents={free.balanceCents} hidden={hidden} />
+            <BreakdownRow
+              label="Contas pendentes"
+              cents={-free.committedCents}
+              hidden={hidden}
+            />
+            <BreakdownRow label="Faturas em aberto" cents={-free.invoicesCents} hidden={hidden} />
+            <BreakdownRow
+              label="Reservado"
+              cents={-free.reservedCents}
+              hidden={hidden}
+              action={reserveAction}
+            />
+            <div className="border-border mt-1 border-t pt-1.5">
+              <BreakdownRow label="Livre para gastar" cents={free.cents} hidden={hidden} strong />
+            </div>
+            {free.expectedIncomeCents > 0 && (
+              // Kept out of the total on purpose: money that has not landed is a plan.
+              <p className="text-muted-foreground border-border mt-1 border-t pt-1.5">
+                Fora da conta:{" "}
+                <Amount cents={free.expectedIncomeCents} hidden={hidden} size="sm" /> a receber
+                até {throughLabel}, ainda não creditados.
+              </p>
+            )}
+            <p className="text-muted-foreground/80">
+              Considera apenas o que já está registrado no app.
+            </p>
+          </dl>
+        )}
       </CardContent>
     </Card>
+  )
+}
+
+function BreakdownRow({
+  label,
+  cents,
+  hidden,
+  strong = false,
+  action,
+}: {
+  label: string
+  cents: number
+  hidden: boolean
+  strong?: boolean
+  action?: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <dt className={cn("flex items-center gap-1", strong && "font-medium")}>
+        {label}
+        {action}
+      </dt>
+      <dd className={cn("shrink-0", strong && "font-medium")}>
+        <Amount cents={cents} hidden={hidden} size="sm" />
+      </dd>
+    </div>
   )
 }
 

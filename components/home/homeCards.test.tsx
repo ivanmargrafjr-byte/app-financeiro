@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
 import { Amount } from "./Amount"
@@ -38,19 +38,47 @@ describe("Amount", () => {
 })
 
 describe("BalanceCard", () => {
-  it("shows the balance and what is left after the invoices", () => {
-    render(<BalanceCard balanceCents={797922} freeCents={613196} hidden={false} />)
+  const free = {
+    throughDate: "2026-08-31",
+    balanceCents: 797922,
+    committedCents: 50000,
+    invoicesCents: 134726,
+    reservedCents: 0,
+    expectedIncomeCents: 0,
+    cents: 613196,
+  }
 
-    expect(screen.getByText("Saldo nas contas")).toBeDefined()
-    expect(screen.getByText(/livres depois de pagar as faturas/)).toBeDefined()
+  it("leads with what is free to spend, with the balance underneath", () => {
+    render(<BalanceCard free={free} hidden={false} />)
+
+    expect(screen.getByText(/Livre para gastar até 31\/08\/2026/)).toBeDefined()
+    expect(screen.getByText("R$ 6.131")).toBeDefined()
+    expect(screen.getByText("R$ 7.979")).toBeDefined()
   })
 
-  it("says what is missing when the cards outrun the accounts", () => {
-    render(<BalanceCard balanceCents={100000} freeCents={-50000} hidden={false} />)
+  it("opens the breakdown that explains the figure", async () => {
+    const { container } = render(<BalanceCard free={{ ...free, reservedCents: 60000 }} hidden={false} />)
 
-    expect(screen.getByText(/para cobrir as faturas em aberto/)).toBeDefined()
-    // The shortfall is shown as a positive figure next to the word "faltam".
-    expect(screen.getByText("R$ 500")).toBeDefined()
+    fireEvent.click(screen.getByRole("button", { name: /Livre para gastar/ }))
+
+    expect(await screen.findByText("Faturas em aberto")).toBeDefined()
+    expect(screen.getByText("Reservado")).toBeDefined()
+    expect(text(container)).toContain("-R$ 600,00")
+  })
+
+  it("reports income that has not landed apart from the total", async () => {
+    render(<BalanceCard free={{ ...free, expectedIncomeCents: 400000 }} hidden={false} />)
+
+    fireEvent.click(screen.getByRole("button", { name: /Livre para gastar/ }))
+
+    expect(await screen.findByText(/a receber/)).toBeDefined()
+    expect(screen.getByText(/ainda não creditados/)).toBeDefined()
+  })
+
+  it("shows a shortfall as a negative figure, not as a missing amount", () => {
+    const { container } = render(<BalanceCard free={{ ...free, cents: -50000 }} hidden={false} />)
+
+    expect(text(container)).toContain("-R$ 500,00")
   })
 })
 

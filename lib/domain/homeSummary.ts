@@ -141,6 +141,73 @@ export function estimateBalanceThrough(input: {
   )
 }
 
+export type FreeToSpend = {
+  /** The horizon every figure below is measured to. */
+  throughDate: DateString
+  balanceCents: number
+  /** Pending outflows already recorded, as a positive number. */
+  committedCents: number
+  /** Open invoices due by the horizon, as a positive number. */
+  invoicesCents: number
+  /** What the person chose to keep untouched, as a positive number. */
+  reservedCents: number
+  /** Pending inflows — shown apart on purpose, never added to `cents`. */
+  expectedIncomeCents: number
+  /** What is actually free to spend; negative when the commitments outrun the money. */
+  cents: number
+}
+
+/**
+ * How much of the money in the accounts is genuinely free to spend before the
+ * horizon — the question a bank balance never answers.
+ *
+ * Income that has not landed is deliberately left out of the total and reported
+ * separately: a salary due next week is a plan, not money, and adding it produces
+ * exactly the false comfort this figure exists to remove.
+ *
+ * Nothing is counted twice. A card purchase reaches this through its invoice, never
+ * as a pending entry (`isPendingCommitment` only accepts account entries), and the
+ * payment of an invoice is excluded there as well, so paying it does not subtract
+ * the same money as the invoice it settles.
+ */
+export function freeToSpend(input: {
+  throughDate: DateString
+  balanceCents: number
+  transactions: Transaction[]
+  openInvoices: Invoice[]
+  cardsById: Map<string, Card>
+  reservedCents?: number
+}): FreeToSpend {
+  const due = input.transactions.filter(
+    (t) => isPendingCommitment(t) && t.date <= input.throughDate
+  )
+  const committedCents = due
+    .filter((t) => t.direction === "out")
+    .reduce((total, t) => total + t.amountCents, 0)
+  const expectedIncomeCents = due
+    .filter((t) => t.direction === "in")
+    .reduce((total, t) => total + t.amountCents, 0)
+
+  const invoicesCents = input.openInvoices
+    .filter(
+      (invoice) =>
+        countsAsOpenInvoice(invoice, input.cardsById) && invoice.dueDate <= input.throughDate
+    )
+    .reduce((total, invoice) => total + invoice.totalAmountCents, 0)
+
+  const reservedCents = Math.max(0, input.reservedCents ?? 0)
+
+  return {
+    throughDate: input.throughDate,
+    balanceCents: input.balanceCents,
+    committedCents,
+    invoicesCents,
+    reservedCents,
+    expectedIncomeCents,
+    cents: input.balanceCents - committedCents - invoicesCents - reservedCents,
+  }
+}
+
 /**
  * What falls due in the window ahead: pending lançamentos and invoices about to close
  * out. Only what the app already knows — nothing is forecast or inferred from habit.

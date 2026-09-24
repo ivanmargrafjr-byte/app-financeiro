@@ -14,6 +14,7 @@ function mapUserProfile(data: Record<string, unknown> | undefined): UserProfile 
     stripeSubscriptionId: data?.stripeSubscriptionId as string | undefined,
     trialStartedAt: data?.trialStartedAt as number | undefined,
     trialEndsAt: data?.trialEndsAt as number | undefined,
+    reservedCents: data?.reservedCents as number | undefined,
   }
 }
 

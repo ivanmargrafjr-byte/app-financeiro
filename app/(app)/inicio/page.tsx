@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { BalanceCard, OpenInvoicesCard } from "@/components/home/BalanceCards"
 import { MonthFlowCard } from "@/components/home/MonthFlowCard"
 import { UpcomingCard } from "@/components/home/UpcomingCard"
+import { ReserveDialog } from "@/components/home/ReserveDialog"
 import { TrialBanner } from "@/components/home/TrialBanner"
 import { useMonth } from "@/lib/month/MonthProvider"
 import { useAccounts } from "@/lib/hooks/useAccounts"
@@ -27,6 +28,7 @@ import { trialDaysRemaining } from "@/lib/domain/subscriptionAccess"
 import {
   buildUpcoming,
   countsAsOpenInvoice,
+  freeToSpend,
   projectBalanceToMonthEnd,
   sumOpenInvoicesCents,
   UPCOMING_DAYS,
@@ -34,6 +36,7 @@ import {
 import {
   addDays,
   currentMonthString,
+  endOfMonth,
   monthLabel,
   monthOfDate,
   todayDateString,
@@ -109,6 +112,16 @@ export default function InicioPage() {
 
     return {
       balanceCents,
+      // Anchored to the end of the current month, like the projection: both answer
+      // "before this month is out", and two horizons on one screen would not read.
+      free: freeToSpend({
+        throughDate: endOfMonth(today),
+        balanceCents,
+        transactions: pending,
+        openInvoices: openInvoices ?? [],
+        cardsById,
+        reservedCents: profile?.reservedCents,
+      }),
       invoicesCents,
       invoiceCount: invoices.length,
       nextDueDate: invoices[0]?.dueDate ?? null,
@@ -131,6 +144,7 @@ export default function InicioPage() {
   }, [
     monthsData,
     accounts,
+    profile?.reservedCents,
     cards,
     archivedCards,
     openInvoices,
@@ -185,9 +199,9 @@ export default function InicioPage() {
       )}
 
       <BalanceCard
-        balanceCents={summary.balanceCents}
-        freeCents={summary.balanceCents - summary.invoicesCents}
+        free={summary.free}
         hidden={hidden}
+        reserveAction={<ReserveDialog reservedCents={summary.free.reservedCents} />}
       />
 
       <OpenInvoicesCard

@@ -192,6 +192,12 @@ export type UserProfile = {
   trialStartedAt?: number
   /** Millis. What `free_trial` access is checked against — see lib/domain/subscriptionAccess.ts. */
   trialEndsAt?: number
+  /**
+   * Money the person chose to keep untouched, in cents. It is an allocation inside the
+   * app, not a transfer: the cash stays in the account, it just stops counting as free
+   * to spend.
+   */
+  reservedCents?: number
 }
 
 /**

@@ -5,6 +5,7 @@ import {
   countsAsOpenInvoice,
   estimateBalanceThrough,
   estimateHorizon,
+  freeToSpend,
   projectBalanceToMonthEnd,
   sumOpenInvoicesCents,
 } from "./homeSummary"
@@ -309,5 +310,85 @@ describe("estimateBalanceThrough", () => {
       openInvoices: [invoice({ id: "i-set", referenceMonth: "2026-09", dueDate: "2026-10-01" })],
     })
     expect(result).toBe(500000)
+  })
+})
+
+describe("freeToSpend", () => {
+  const base = {
+    throughDate: "2026-08-31",
+    balanceCents: 500000,
+    transactions: [] as Transaction[],
+    openInvoices: [] as Invoice[],
+    cardsById: CARDS,
+    reservedCents: 0,
+  }
+
+  it("takes out what is already committed, the open invoices and the reserve", () => {
+    const result = freeToSpend({
+      ...base,
+      transactions: [tx({ id: "t1", direction: "out", amountCents: 180000 })],
+      openInvoices: [invoice({ dueDate: "2026-08-10", totalAmountCents: 140000 })],
+      reservedCents: 60000,
+    })
+
+    expect(result.cents).toBe(120000)
+    expect(result.committedCents).toBe(180000)
+    expect(result.invoicesCents).toBe(140000)
+    expect(result.reservedCents).toBe(60000)
+  })
+
+  it("reports income that has not landed apart, without adding it", () => {
+    const result = freeToSpend({
+      ...base,
+      transactions: [tx({ id: "t-in", direction: "in", amountCents: 400000 })],
+    })
+
+    expect(result.expectedIncomeCents).toBe(400000)
+    expect(result.cents).toBe(500000)
+  })
+
+  it("goes negative when the commitments outrun the money", () => {
+    const result = freeToSpend({
+      ...base,
+      balanceCents: 100000,
+      openInvoices: [invoice({ dueDate: "2026-08-10", totalAmountCents: 250000 })],
+    })
+
+    expect(result.cents).toBe(-150000)
+  })
+
+  it("does not count a card purchase twice, through the entry and the invoice", () => {
+    const result = freeToSpend({
+      ...base,
+      transactions: [tx({ id: "t-card", origin: "card", amountCents: 90000 })],
+      openInvoices: [invoice({ dueDate: "2026-08-10", totalAmountCents: 90000 })],
+    })
+
+    expect(result.committedCents).toBe(0)
+    expect(result.cents).toBe(500000 - 90000)
+  })
+
+  it("does not subtract an invoice payment on top of the invoice it settles", () => {
+    const result = freeToSpend({
+      ...base,
+      transactions: [tx({ id: "t-pay", amountCents: 90000, isInvoicePayment: true })],
+      openInvoices: [invoice({ dueDate: "2026-08-10", totalAmountCents: 90000 })],
+    })
+
+    expect(result.cents).toBe(500000 - 90000)
+  })
+
+  it("ignores what falls due after the horizon", () => {
+    const result = freeToSpend({
+      ...base,
+      transactions: [tx({ id: "t-set", date: "2026-09-04", competenceMonth: "2026-09" })],
+      openInvoices: [invoice({ id: "i-set", dueDate: "2026-09-10" })],
+    })
+
+    expect(result.cents).toBe(500000)
+  })
+
+  it("treats a negative reserve as none, rather than handing out free money", () => {
+    expect(freeToSpend({ ...base, reservedCents: -50000 }).cents).toBe(500000)
   })
 })
