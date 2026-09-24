@@ -10,7 +10,7 @@ import { isWithinRoute } from "@/lib/navigation/isWithinRoute"
  * for the effect. A new screen therefore starts without the switcher and opts in
  * here, rather than inheriting a control it ignores.
  */
-export const MONTH_SCOPED_ROUTES = ["/inicio", "/dashboard", "/transacoes"] as const
+export const MONTH_SCOPED_ROUTES = ["/inicio", "/dashboard", "/transacoes", "/orcamentos"] as const
 
 export function isMonthScopedRoute(pathname: string): boolean {
   return MONTH_SCOPED_ROUTES.some((route) => isWithinRoute(pathname, route))

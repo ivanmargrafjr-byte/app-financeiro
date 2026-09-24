@@ -7,6 +7,7 @@ describe("isMonthScopedRoute", () => {
     expect(isMonthScopedRoute("/inicio")).toBe(true)
     expect(isMonthScopedRoute("/dashboard")).toBe(true)
     expect(isMonthScopedRoute("/transacoes")).toBe(true)
+    expect(isMonthScopedRoute("/orcamentos")).toBe(true)
   })
 
   it("drops it where the content is the same in any month", () => {

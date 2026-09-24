@@ -26,6 +26,14 @@ export function categoryDocRef(uid: string, categoryId: string) {
   return doc(db, "users", uid, "categories", categoryId)
 }
 
+export function budgetsCol(uid: string) {
+  return collection(db, "users", uid, "budgets")
+}
+/** The category id doubles as the document id: one limit per category, by construction. */
+export function budgetDocRef(uid: string, categoryId: string) {
+  return doc(db, "users", uid, "budgets", categoryId)
+}
+
 export function transactionsCol(uid: string) {
   return collection(db, "users", uid, "transactions")
 }
