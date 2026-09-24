@@ -14,9 +14,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ContractAgenda } from "@/components/contracts/ContractAgenda"
 import { ContractForm } from "@/components/forms/ContractForm"
 import { formatCentsBRL } from "@/lib/domain/money"
 import { useContracts, useCreateContract } from "@/lib/hooks/useContracts"
+import { annualCostCents, contractsNeedingAttention } from "@/lib/domain/contractLifecycle"
+import { todayDateString } from "@/lib/domain/dateUtils"
 import type { ContractFormValues } from "@/lib/validators/contract"
 
 function formatBrDate(date: string) {
@@ -26,6 +29,8 @@ function formatBrDate(date: string) {
 export default function ContratosPage() {
   const { data: contracts, isLoading } = useContracts()
   const createContract = useCreateContract()
+  const [today] = useState(() => todayDateString())
+  const attention = contractsNeedingAttention(contracts ?? [], today)
   const [open, setOpen] = useState(false)
 
   async function handleCreate(values: ContractFormValues) {
@@ -78,6 +83,19 @@ export default function ContratosPage() {
         </p>
       )}
 
+      {!isLoading && attention.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-muted-foreground text-sm font-medium">
+              Pedem atenção nos próximos 90 dias
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ContractAgenda attention={attention} />
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {contracts?.map((contract) => (
           <Link key={contract.id} href={`/contratos/${contract.id}`}>
@@ -101,6 +119,15 @@ export default function ContratosPage() {
                 {contract.valueCents !== null && (
                   <p className="text-sm font-medium">
                     {formatCentsBRL(contract.valueCents)}
+                    {(() => {
+                      const annual = annualCostCents(contract)
+                      return annual === null ? null : (
+                        <span className="text-muted-foreground font-normal">
+                          {" "}
+                          · {formatCentsBRL(annual)} por ano
+                        </span>
+                      )
+                    })()}
                   </p>
                 )}
               </CardContent>

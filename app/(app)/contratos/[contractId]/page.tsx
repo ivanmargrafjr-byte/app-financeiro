@@ -20,6 +20,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ContractForm } from "@/components/forms/ContractForm"
 import { formatCentsBRL, fromCents } from "@/lib/domain/money"
+import { ContractTimeline } from "@/components/contracts/ContractTimeline"
+import { annualCostCents } from "@/lib/domain/contractLifecycle"
+import { todayDateString } from "@/lib/domain/dateUtils"
 import {
   useArchiveContract,
   useContracts,
@@ -126,6 +129,16 @@ export default function ContractDetailPage({
                   value:
                     contract.valueCents !== null ? fromCents(contract.valueCents) : undefined,
                   notes: contract.notes ?? "",
+                  billingPeriod: contract.billingPeriod ?? "mensal",
+                  noticeDays: contract.noticeDays ?? undefined,
+                  autoRenew: contract.autoRenew ?? false,
+                  promoEndsAt: contract.promoEndsAt ?? undefined,
+                  postPromoValue:
+                    contract.postPromoValueCents != null
+                      ? fromCents(contract.postPromoValueCents)
+                      : undefined,
+                  adjustmentMonth: contract.adjustmentMonth ?? undefined,
+                  adjustmentIndex: contract.adjustmentIndex ?? undefined,
                 }}
                 currentFileName={contract.fileName}
                 submitLabel="Salvar alterações"
@@ -166,6 +179,20 @@ export default function ContractDetailPage({
                 {contract.valueCents !== null ? formatCentsBRL(contract.valueCents) : "—"}
               </p>
             </div>
+            <div>
+              <p className="text-muted-foreground text-xs">Custo anual</p>
+              <p className="text-sm font-medium">
+                {(() => {
+                  const annual = annualCostCents(contract)
+                  return annual === null ? "—" : formatCentsBRL(annual)
+                })()}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-muted-foreground mb-1.5 text-xs">Linha do tempo</p>
+            <ContractTimeline contract={contract} today={todayDateString()} />
           </div>
 
           <div>

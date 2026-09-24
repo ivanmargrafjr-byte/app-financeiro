@@ -166,6 +166,20 @@ export type Contract = {
   fileName: string | null
   fileUrl: string | null
   fileStoragePath: string | null
+  /** How often the value is charged; absent on contracts written before this existed. */
+  billingPeriod?: "mensal" | "bimestral" | "trimestral" | "semestral" | "anual" | "unico"
+  /** Days of notice the contract requires to cancel it, counted back from the end. */
+  noticeDays?: number | null
+  /** Renews itself unless cancelled — the end date is a decision point, not an ending. */
+  autoRenew?: boolean
+  /** When the promotional price ends. */
+  promoEndsAt?: DateString | null
+  /** What the charge becomes once the promotion ends. */
+  postPromoValueCents?: number | null
+  /** 'MM' — the month the price is adjusted every year. */
+  adjustmentMonth?: string | null
+  /** The index the adjustment follows, as written in the contract (IPCA, IGP-M...). */
+  adjustmentIndex?: string | null
   archived: boolean
   createdAt: number
   updatedAt: number

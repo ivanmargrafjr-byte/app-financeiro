@@ -34,6 +34,13 @@ function contractFields(values: ContractFormValues) {
     paymentMethod: values.paymentMethod,
     valueCents: values.value != null ? toCents(values.value) : null,
     notes: values.notes || null,
+    billingPeriod: values.billingPeriod,
+    noticeDays: values.noticeDays ?? null,
+    autoRenew: values.autoRenew,
+    promoEndsAt: values.promoEndsAt || null,
+    postPromoValueCents: values.postPromoValue != null ? toCents(values.postPromoValue) : null,
+    adjustmentMonth: values.adjustmentMonth || null,
+    adjustmentIndex: values.adjustmentIndex || null,
   }
 }
 
@@ -65,6 +72,13 @@ export function useContracts() {
             fileName: (data.fileName as string | undefined) ?? null,
             fileUrl: (data.fileUrl as string | undefined) ?? null,
             fileStoragePath: (data.fileStoragePath as string | undefined) ?? null,
+            billingPeriod: (data.billingPeriod as Contract["billingPeriod"]) ?? "mensal",
+            noticeDays: (data.noticeDays as number | undefined) ?? null,
+            autoRenew: (data.autoRenew as boolean | undefined) ?? false,
+            promoEndsAt: (data.promoEndsAt as string | undefined) ?? null,
+            postPromoValueCents: (data.postPromoValueCents as number | undefined) ?? null,
+            adjustmentMonth: (data.adjustmentMonth as string | undefined) ?? null,
+            adjustmentIndex: (data.adjustmentIndex as string | undefined) ?? null,
             archived: data.archived,
             createdAt: tsToMillis(data.createdAt),
             updatedAt: tsToMillis(data.updatedAt),

@@ -15,6 +15,14 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { todayDateString } from "@/lib/domain/dateUtils"
 import {
@@ -33,6 +41,21 @@ type ExtractedContract = {
   executionDays: number | null
   paymentMethod: string | null
   value: number | null
+}
+
+const PERIOD_LABELS: Record<string, string> = {
+  mensal: "Mensal",
+  bimestral: "Bimestral",
+  trimestral: "Trimestral",
+  semestral: "Semestral",
+  anual: "Anual",
+  unico: "Pagamento único",
+}
+
+const MONTH_LABELS: Record<string, string> = {
+  "01": "Janeiro", "02": "Fevereiro", "03": "Março", "04": "Abril",
+  "05": "Maio", "06": "Junho", "07": "Julho", "08": "Agosto",
+  "09": "Setembro", "10": "Outubro", "11": "Novembro", "12": "Dezembro",
 }
 
 export function ContractForm({
@@ -62,6 +85,8 @@ export function ContractForm({
       endDate: todayDateString(),
       paymentMethod: "",
       notes: "",
+      billingPeriod: "mensal",
+      autoRenew: false,
       ...defaultValues,
     },
   })
@@ -276,6 +301,154 @@ export function ContractForm({
             </FormItem>
           )}
         />
+        <div className="border-border mt-2 grid gap-4 rounded-lg border p-3">
+          <p className="text-muted-foreground text-xs">
+            Ciclo de vida — o que o app precisa saber para avisar antes das datas que custam
+            dinheiro. Tudo opcional.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="billingPeriod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Periodicidade</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue>{(value: string) => PERIOD_LABELS[value] ?? value}</SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.entries(PERIOD_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="noticeDays"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Aviso de cancelamento (dias)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="30"
+                      {...field}
+                      value={(field.value as number | string | undefined) ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <FormField
+            control={form.control}
+            name="autoRenew"
+            render={({ field }) => (
+              <FormItem className="flex items-center justify-between gap-2">
+                <FormLabel className="font-normal">Renova automaticamente</FormLabel>
+                <FormControl>
+                  <Switch
+                    checked={!!field.value}
+                    onCheckedChange={(checked) => field.onChange(checked)}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="promoEndsAt"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fim do desconto</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} value={(field.value as string | undefined) ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="postPromoValue"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Valor depois (R$)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      {...field}
+                      value={(field.value as number | string | undefined) ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="adjustmentMonth"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mês do reajuste</FormLabel>
+                  <Select
+                    value={(field.value as string | undefined) ?? ""}
+                    onValueChange={field.onChange}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue>
+                          {(value: string) => MONTH_LABELS[value] ?? "Sem reajuste"}
+                        </SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.entries(MONTH_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="adjustmentIndex"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Índice</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="IPCA"
+                      {...field}
+                      value={(field.value as string | undefined) ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
         <Button type="submit" disabled={submitting || extracting} className="mt-2">
           {submitting ? "Salvando..." : submitLabel}
         </Button>

@@ -16,6 +16,15 @@ export const contractSchema = z.object({
   value: z.preprocess(blankToUndefined, z.coerce.number().nonnegative().optional()),
   notes: z.string().optional(),
   file: z.instanceof(File).optional(),
+  billingPeriod: z
+    .enum(["mensal", "bimestral", "trimestral", "semestral", "anual", "unico"])
+    .default("mensal"),
+  noticeDays: z.preprocess(blankToUndefined, z.coerce.number().int().nonnegative().optional()),
+  autoRenew: z.boolean().default(false),
+  promoEndsAt: z.preprocess(blankToUndefined, z.string().optional()),
+  postPromoValue: z.preprocess(blankToUndefined, z.coerce.number().nonnegative().optional()),
+  adjustmentMonth: z.preprocess(blankToUndefined, z.string().optional()),
+  adjustmentIndex: z.preprocess(blankToUndefined, z.string().optional()),
 })
 export type ContractFormValues = z.output<typeof contractSchema>
 export type ContractFormInput = z.input<typeof contractSchema>
