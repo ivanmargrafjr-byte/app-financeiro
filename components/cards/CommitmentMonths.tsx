@@ -21,7 +21,7 @@ export function CommitmentMonths({
   return (
     <ul className="grid gap-2">
       {months.map((month) => (
-        <li key={month.month} className="grid gap-1">
+        <li key={month.month} className="grid min-w-0 gap-1">
           <div className="flex items-baseline justify-between gap-2 text-sm">
             <span className="text-muted-foreground capitalize">{shortMonthLabel(month.month)}</span>
             <Amount

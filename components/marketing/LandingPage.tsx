@@ -1,5 +1,9 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
+
+import { useIsNativeApp } from "@/lib/platform/useIsNativeApp"
 import { CreditCard, PieChart, Repeat, Wallet } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -36,6 +40,8 @@ const FEATURES = [
 ]
 
 export function LandingPage() {
+  const isNativeApp = useIsNativeApp()
+
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
@@ -59,24 +65,41 @@ export function LandingPage() {
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            {/* These navigate rather than act, so they render as links — nativeButton
-                must say so, or Base UI warns about the lost button semantics. */}
-            <Button
-              nativeButton={false}
-              render={<a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" />}
-            >
-              Baixar na App Store
-            </Button>
-            <Button
-              variant="outline"
-              nativeButton={false}
-              render={<a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" />}
-            >
-              Baixar no Google Play
-            </Button>
-            <Button variant="ghost" nativeButton={false} render={<Link href="/signup" />}>
-              Ou use pelo navegador
-            </Button>
+            {/* Inside the installed app the store buttons are worse than useless: the
+                person already has it, and App Review reads a link to another store as
+                the app pointing somewhere else (guideline 2.3.10). On the web they are
+                the whole point of the page. */}
+            {isNativeApp ? (
+              <>
+                <Button nativeButton={false} render={<Link href="/signup" />}>
+                  Criar conta
+                </Button>
+                <Button variant="ghost" nativeButton={false} render={<Link href="/login" />}>
+                  Já tenho conta
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* These navigate rather than act, so they render as links — nativeButton
+                    must say so, or Base UI warns about the lost button semantics. */}
+                <Button
+                  nativeButton={false}
+                  render={<a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" />}
+                >
+                  Baixar na App Store
+                </Button>
+                <Button
+                  variant="outline"
+                  nativeButton={false}
+                  render={<a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" />}
+                >
+                  Baixar no Google Play
+                </Button>
+                <Button variant="ghost" nativeButton={false} render={<Link href="/signup" />}>
+                  Ou use pelo navegador
+                </Button>
+              </>
+            )}
           </div>
 
           {/* "sem cartão" is the whole point of the change and the strongest thing
