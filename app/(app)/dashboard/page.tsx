@@ -9,8 +9,9 @@ import { IncomeExpenseBarChart, type MonthTotals } from "@/components/charts/Inc
 import { CategoryTransactionsDialog } from "@/components/dashboard/CategoryTransactionsDialog"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { useMonth } from "@/lib/month/MonthProvider"
-import { useMonthsTransactions } from "@/lib/hooks/useTransactions"
+import { useMonthsTransactions, useMonthTransactions } from "@/lib/hooks/useTransactions"
 import { useArchivedCards } from "@/lib/hooks/useCards"
+import { useCategories } from "@/lib/hooks/useCategories"
 import { countsInMonthlyTotals } from "@/lib/domain/monthlyTotals"
 import {
   monthsInPeriod,
@@ -18,6 +19,9 @@ import {
   PERIOD_LENGTHS,
   type PeriodLength,
 } from "@/lib/domain/dashboardPeriod"
+import { MonthReviewCard } from "@/components/review/MonthReviewCard"
+import { buildMonthReview } from "@/lib/domain/monthReview"
+import { addMonths } from "@/lib/domain/dateUtils"
 import { monthLabel, shortMonthLabel } from "@/lib/domain/dateUtils"
 import { formatCentsBRL } from "@/lib/domain/money"
 import { DEFAULT_ICON_NAME } from "@/lib/iconRegistry"
@@ -33,6 +37,25 @@ export default function DashboardPage() {
   // Needed to apply each archived card's cutoff below. Its loading state gates the
   // skeleton too, so the totals never flash the pre-cutoff (inflated) figure first.
   const { data: archivedCards, isLoading: isLoadingArchivedCards } = useArchivedCards()
+  // The review compares two single months, so it only makes sense on the one-month
+  // period — over a quarter, "o mês anterior" has no meaning.
+  const previousMonth = addMonths(month, -1)
+  const { data: previousTransactions } = useMonthTransactions(previousMonth)
+  const { data: categories } = useCategories()
+
+  const review = useMemo(() => {
+    if (periodLength !== 1) return null
+    const current = (monthsData ?? []).find((bucket) => bucket.month === month)
+    if (!current || !previousTransactions) return null
+    return buildMonthReview({
+      month,
+      previousMonth,
+      current: current.transactions,
+      previous: previousTransactions,
+      categories: categories ?? [],
+      archivedCardsById: new Map((archivedCards ?? []).map((c) => [c.id, c])),
+    })
+  }, [periodLength, monthsData, month, previousMonth, previousTransactions, categories, archivedCards])
 
   const summary = useMemo(() => {
     const archivedById = new Map((archivedCards ?? []).map((c) => [c.id, c]))
@@ -133,6 +156,19 @@ export default function DashboardPage() {
         <p className="text-muted-foreground text-sm">{periodLabel}</p>
         {periodPicker}
       </div>
+
+      {review && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-muted-foreground text-sm font-medium">
+              O que mudou desde o mês anterior
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MonthReviewCard review={review} />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Card>
