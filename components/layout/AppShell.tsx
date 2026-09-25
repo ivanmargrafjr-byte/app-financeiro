@@ -17,6 +17,7 @@ import {
   Shield,
   Tag,
   User,
+  Users,
   Wallet,
 } from "lucide-react"
 import type { ReactNode } from "react"
@@ -43,6 +44,7 @@ const NAV_ITEMS = [
   { href: "/orcamentos", label: "Orçamentos", icon: PiggyBank },
   { href: "/categorias", label: "Categorias", icon: Tag },
   { href: "/contratos", label: "Contratos", icon: FileText },
+  { href: "/compartilhado", label: "Compartilhado", icon: Users },
   { href: "/conta", label: "Conta", icon: User },
 ]
 
