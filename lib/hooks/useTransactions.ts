@@ -14,7 +14,12 @@ import {
 
 import { useAuth } from "@/lib/auth/AuthProvider"
 import { db } from "@/lib/firebase/client"
-import { accountDocRef, transactionDocRef, transactionsCol } from "@/lib/firebase/paths"
+import {
+  accountDocRef,
+  importDocRef,
+  transactionDocRef,
+  transactionsCol,
+} from "@/lib/firebase/paths"
 import { tsToMillis } from "@/lib/firebase/timestamp"
 import { monthOfDate } from "@/lib/domain/dateUtils"
 import { toCents } from "@/lib/domain/money"
@@ -52,6 +57,7 @@ export function mapTransactionDoc(id: string, data: Record<string, unknown>): Tr
     accountId: data.accountId as string | undefined,
     recurringSeriesId: data.recurringSeriesId as string | undefined,
     ofxFitId: data.ofxFitId as string | undefined,
+    importBatchId: data.importBatchId as string | undefined,
     counterAccountId: data.counterAccountId as string | undefined,
     transferGroupId: data.transferGroupId as string | undefined,
     settledVia: data.settledVia as Transaction["settledVia"],
@@ -584,11 +590,17 @@ export function useImportOfxTransactions() {
     mutationFn: async ({
       accountId,
       entries,
+      fileName,
     }: {
       accountId: string
       entries: OfxImportEntry[]
+      fileName?: string
     }) => {
       const uid = user!.uid
+      // One record per import, so the whole thing can be listed and undone later.
+      const importBatchId = uuidv4()
+      const createdIds: string[] = []
+      const settledIds: string[] = []
 
       for (let start = 0; start < entries.length; start += OFX_IMPORT_CHUNK_SIZE) {
         const chunk = entries.slice(start, start + OFX_IMPORT_CHUNK_SIZE)
@@ -615,12 +627,14 @@ export function useImportOfxTransactions() {
               data.direction as "in" | "out",
               data.amountCents as number
             )
+            settledIds.push(snap.id)
             trx.update(snap.ref, {
               settled: true,
               accountId,
               // Stamped so a later import of the same period recognises this
               // lançamento as this bank movement, not as something new.
               ofxFitId: settling[i].fitId,
+              importBatchId,
               updatedAt: serverTimestamp(),
             })
           })
@@ -630,7 +644,9 @@ export function useImportOfxTransactions() {
             if (!entry.category) throw new Error("Selecione uma categoria para cada lançamento")
 
             balanceDelta += signedAmount(entry.direction, entry.amountCents)
-            trx.set(doc(transactionsCol(uid)), {
+            const createdRef = doc(transactionsCol(uid))
+            createdIds.push(createdRef.id)
+            trx.set(createdRef, {
               origin: "account",
               direction: entry.direction,
               amountCents: entry.amountCents,
@@ -645,6 +661,7 @@ export function useImportOfxTransactions() {
               accountId,
               settled: true,
               ofxFitId: entry.fitId,
+              importBatchId,
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
             })
@@ -658,6 +675,17 @@ export function useImportOfxTransactions() {
           }
         })
       }
+
+      // Written last, and only on success: a record of an import that did not finish
+      // would offer to undo work that was never done.
+      await setDoc(importDocRef(uid, importBatchId), {
+        source: "ofx",
+        accountId,
+        fileName: fileName ?? null,
+        createdIds,
+        settledIds,
+        createdAt: serverTimestamp(),
+      })
     },
     onSuccess: () => invalidateTransactionQueries(queryClient, user?.uid),
   })

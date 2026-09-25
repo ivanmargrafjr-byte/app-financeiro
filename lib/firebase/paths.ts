@@ -26,6 +26,13 @@ export function categoryDocRef(uid: string, categoryId: string) {
   return doc(db, "users", uid, "categories", categoryId)
 }
 
+export function importsCol(uid: string) {
+  return collection(db, "users", uid, "imports")
+}
+export function importDocRef(uid: string, importId: string) {
+  return doc(db, "users", uid, "imports", importId)
+}
+
 export function budgetsCol(uid: string) {
   return collection(db, "users", uid, "budgets")
 }

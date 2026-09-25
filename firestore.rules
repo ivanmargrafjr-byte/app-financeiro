@@ -49,6 +49,11 @@ service cloud.firestore {
       match /goals/{goalId} {
         allow read, write: if isOwner(userId);
       }
+
+      // One record per statement import, so it can be listed and undone.
+      match /imports/{importId} {
+        allow read, write: if isOwner(userId);
+      }
       match /transactions/{transactionId} {
         allow read: if isOwner(userId);
         allow create: if isOwner(userId)

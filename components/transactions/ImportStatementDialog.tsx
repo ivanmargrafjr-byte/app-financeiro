@@ -115,13 +115,17 @@ export function ImportStatementDialog({
   const [rows, setRows] = useState<DraftRow[]>([])
   const [statement, setStatement] = useState<OfxStatement | null>(null)
 
+  const [fileName, setFileName] = useState<string | null>(null)
+
   function reset() {
     setRows([])
     setStatement(null)
+    setFileName(null)
   }
 
   async function handleFileChange(file: File | undefined) {
     if (!file) return
+    setFileName(file.name)
     try {
       const parsed = parseOfx(decodeOfxBytes(await file.arrayBuffer()))
       if (parsed.transactions.length === 0) {
@@ -205,6 +209,7 @@ export function ImportStatementDialog({
     try {
       await importOfx.mutateAsync({
         accountId: account.id,
+        fileName: fileName ?? undefined,
         entries: includedRows.map((row) => ({
           fitId: row.fitId,
           date: row.date,

@@ -81,6 +81,8 @@ export type Transaction = {
    * instead of heuristic — see lib/domain/ofxImportMatch.ts.
    */
   ofxFitId?: string
+  /** The statement import that created (or settled) this entry, when it came from one. */
+  importBatchId?: string
 
   // origin === 'account'
   accountId?: string
@@ -214,6 +216,12 @@ export type UserProfile = {
   reservedCents?: number
   /** Alert kinds the user switched off — see lib/domain/alerts.ts. */
   mutedAlertKinds?: string[]
+  /**
+   * Duplicate warnings the user looked at and dismissed. Only duplicates are kept:
+   * their id is the entry itself, so it stays meaningful, while a budget or balance
+   * alert describes a situation that should come back when it happens again.
+   */
+  dismissedDuplicateIds?: string[]
 }
 
 /**

@@ -18,8 +18,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { TransactionForm } from "@/components/forms/TransactionForm"
 import { TransferForm } from "@/components/forms/TransferForm"
 import { TransactionListItem } from "@/components/transactions/TransactionListItem"
+import { ImportHistory } from "@/components/imports/ImportHistory"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { useAccounts } from "@/lib/hooks/useAccounts"
+import { useImports, useUndoImport, type ImportBatch } from "@/lib/hooks/useImports"
 import { useArchivedCards, useCards } from "@/lib/hooks/useCards"
 import { useCategories } from "@/lib/hooks/useCategories"
 import { useMonthInvoices, useOpenInvoices } from "@/lib/hooks/useInvoices"
@@ -49,6 +51,8 @@ export default function TransacoesPage() {
   const { data: openInvoices } = useOpenInvoices()
   const createTransaction = useCreateAccountTransaction()
   const createTransfer = useCreateTransfer()
+  const { data: imports } = useImports()
+  const undoImport = useUndoImport()
   const [open, setOpen] = useState(false)
   const [transferOpen, setTransferOpen] = useState(false)
   // Frozen for the life of the screen, as on the tela de início: a date that moved
@@ -199,6 +203,31 @@ export default function TransacoesPage() {
           </p>
         </CardContent>
       </Card>
+
+      {!!imports?.length && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-muted-foreground text-sm font-medium">
+              Importações recentes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ImportHistory
+              imports={imports.slice(0, 5)}
+              accountNameById={new Map((accounts ?? []).map((a) => [a.id, a.name]))}
+              undoing={undoImport.isPending}
+              onUndo={async (batch: ImportBatch) => {
+                try {
+                  await undoImport.mutateAsync(batch)
+                  toast.success("Importação desfeita")
+                } catch {
+                  toast.error("Não foi possível desfazer")
+                }
+              }}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {!isLoadingInvoices && visibleInvoices.length > 0 && (
         <Card>

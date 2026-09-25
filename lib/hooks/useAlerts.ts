@@ -34,7 +34,12 @@ import { addMonths, monthOfDate, todayDateString } from "@/lib/domain/dateUtils"
  * All of it is computed from data the screens already load — the alerts are a
  * reading of the same numbers, not a second source that could disagree with them.
  */
-export function useAlerts(): { alerts: Alert[]; isLoading: boolean; muted: AlertKind[] } {
+export function useAlerts(): {
+  alerts: Alert[]
+  isLoading: boolean
+  muted: AlertKind[]
+  dismissed: string[]
+} {
   const [today] = useState(() => todayDateString())
   const currentMonth = monthOfDate(today)
   const months = useMemo(() => [addMonths(currentMonth, -1), currentMonth], [currentMonth])
@@ -52,6 +57,7 @@ export function useAlerts(): { alerts: Alert[]; isLoading: boolean; muted: Alert
   const { data: contracts } = useContracts()
 
   const muted = (profile?.mutedAlertKinds ?? []) as AlertKind[]
+  const dismissed = profile?.dismissedDuplicateIds ?? []
 
   const alerts = useMemo(() => {
     const byMonth = new Map((monthsData ?? []).map((bucket) => [bucket.month, bucket.transactions]))
@@ -90,7 +96,7 @@ export function useAlerts(): { alerts: Alert[]; isLoading: boolean; muted: Alert
         currentMonth
       ),
       ...alertsFromDuplicates(byMonth.get(currentMonth) ?? []),
-    ]).filter((alert) => !muted.includes(alert.kind))
+    ]).filter((alert) => !muted.includes(alert.kind) && !dismissed.includes(alert.id))
   }, [
     accounts,
     cards,
@@ -105,11 +111,13 @@ export function useAlerts(): { alerts: Alert[]; isLoading: boolean; muted: Alert
     currentMonth,
     today,
     muted,
+    dismissed,
   ])
 
   return {
     alerts,
     isLoading: loadingAccounts || loadingInvoices || loadingPending || loadingMonths,
     muted,
+    dismissed,
   }
 }

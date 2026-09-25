@@ -16,6 +16,7 @@ function mapUserProfile(data: Record<string, unknown> | undefined): UserProfile 
     trialEndsAt: data?.trialEndsAt as number | undefined,
     reservedCents: data?.reservedCents as number | undefined,
     mutedAlertKinds: data?.mutedAlertKinds as string[] | undefined,
+    dismissedDuplicateIds: data?.dismissedDuplicateIds as string[] | undefined,
   }
 }
 

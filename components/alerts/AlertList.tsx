@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { AlertTriangle, ChevronRight, Info } from "lucide-react"
+import { AlertTriangle, ChevronRight, Info, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import type { Alert } from "@/lib/domain/alerts"
@@ -8,7 +8,16 @@ import type { Alert } from "@/lib/domain/alerts"
  * Every alert shows what it noticed and why it thinks so, and goes somewhere the
  * user can check it. An alert that cannot be verified is just noise with an icon.
  */
-export function AlertList({ alerts, emptyLabel }: { alerts: Alert[]; emptyLabel: string }) {
+export function AlertList({
+  alerts,
+  emptyLabel,
+  onDismiss,
+}: {
+  alerts: Alert[]
+  emptyLabel: string
+  /** Offered only where dismissing makes sense — see the duplicates alert. */
+  onDismiss?: (alert: Alert) => void
+}) {
   if (alerts.length === 0) {
     return <p className="text-muted-foreground text-sm">{emptyLabel}</p>
   }
@@ -18,7 +27,17 @@ export function AlertList({ alerts, emptyLabel }: { alerts: Alert[]; emptyLabel:
       {alerts.map((alert) => {
         const critical = alert.severity === "critico"
         return (
-          <li key={alert.id}>
+          <li key={alert.id} className="relative">
+            {onDismiss && alert.kind === "duplicidade" && (
+              <button
+                type="button"
+                aria-label="Ignorar este aviso"
+                onClick={() => onDismiss(alert)}
+                className="text-muted-foreground hover:text-foreground absolute top-2 right-9 z-10 p-1"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
             <Link
               href={alert.href}
               className="border-border bg-card hover:bg-accent flex items-start justify-between gap-2 rounded-lg border px-3 py-2.5"

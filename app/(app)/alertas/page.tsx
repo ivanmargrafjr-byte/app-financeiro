@@ -10,14 +10,15 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import { AlertList } from "@/components/alerts/AlertList"
 import { useAlerts } from "@/lib/hooks/useAlerts"
-import { useSetMutedAlerts } from "@/lib/hooks/useAlertSettings"
+import { useDismissDuplicate, useSetMutedAlerts } from "@/lib/hooks/useAlertSettings"
 import { ALERT_LABELS, type AlertKind } from "@/lib/domain/alerts"
 
 const KINDS = Object.keys(ALERT_LABELS) as AlertKind[]
 
 export default function AlertasPage() {
-  const { alerts, isLoading, muted } = useAlerts()
+  const { alerts, isLoading, muted, dismissed } = useAlerts()
   const setMuted = useSetMutedAlerts()
+  const dismissDuplicate = useDismissDuplicate()
   const [showSettings, setShowSettings] = useState(false)
 
   async function toggle(kind: AlertKind, enabled: boolean) {
@@ -72,6 +73,14 @@ export default function AlertasPage() {
       ) : (
         <AlertList
           alerts={alerts}
+          onDismiss={async (alert) => {
+            try {
+              await dismissDuplicate.mutateAsync([...dismissed, alert.id])
+              toast.success("Aviso ignorado")
+            } catch {
+              toast.error("Não foi possível ignorar")
+            }
+          }}
           emptyLabel={
             muted.length === KINDS.length
               ? "Todos os tipos de aviso estão desligados."
