@@ -212,6 +212,8 @@ export type UserProfile = {
    * to spend.
    */
   reservedCents?: number
+  /** Alert kinds the user switched off — see lib/domain/alerts.ts. */
+  mutedAlertKinds?: string[]
 }
 
 /**

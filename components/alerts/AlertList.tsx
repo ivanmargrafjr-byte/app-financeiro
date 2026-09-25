@@ -1,0 +1,48 @@
+import Link from "next/link"
+import { AlertTriangle, ChevronRight, Info } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+import type { Alert } from "@/lib/domain/alerts"
+
+/**
+ * Every alert shows what it noticed and why it thinks so, and goes somewhere the
+ * user can check it. An alert that cannot be verified is just noise with an icon.
+ */
+export function AlertList({ alerts, emptyLabel }: { alerts: Alert[]; emptyLabel: string }) {
+  if (alerts.length === 0) {
+    return <p className="text-muted-foreground text-sm">{emptyLabel}</p>
+  }
+
+  return (
+    <ul className="grid gap-2">
+      {alerts.map((alert) => {
+        const critical = alert.severity === "critico"
+        return (
+          <li key={alert.id}>
+            <Link
+              href={alert.href}
+              className="border-border bg-card hover:bg-accent flex items-start justify-between gap-2 rounded-lg border px-3 py-2.5"
+            >
+              <span className="flex min-w-0 items-start gap-2">
+                {critical ? (
+                  <AlertTriangle className="text-destructive mt-0.5 size-4 shrink-0" />
+                ) : (
+                  <Info className="text-muted-foreground mt-0.5 size-4 shrink-0" />
+                )}
+                <span className="min-w-0">
+                  <span
+                    className={cn("block text-sm font-medium", critical && "text-destructive")}
+                  >
+                    {alert.title}
+                  </span>
+                  <span className="text-muted-foreground block text-xs">{alert.because}</span>
+                </span>
+              </span>
+              <ChevronRight className="text-muted-foreground mt-0.5 size-4 shrink-0" />
+            </Link>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}

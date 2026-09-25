@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState, useSyncExternalStore } from "react"
+import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -10,11 +11,13 @@ import { MonthFlowCard } from "@/components/home/MonthFlowCard"
 import { UpcomingCard } from "@/components/home/UpcomingCard"
 import { ReserveDialog } from "@/components/home/ReserveDialog"
 import { TrialBanner } from "@/components/home/TrialBanner"
+import { AlertList } from "@/components/alerts/AlertList"
 import { useMonth } from "@/lib/month/MonthProvider"
 import { useAccounts } from "@/lib/hooks/useAccounts"
 import { useArchivedCards, useCards } from "@/lib/hooks/useCards"
 import { useOpenInvoices } from "@/lib/hooks/useInvoices"
 import { useMonthsTransactions, usePendingTransactions } from "@/lib/hooks/useTransactions"
+import { useAlerts } from "@/lib/hooks/useAlerts"
 import { useGoals } from "@/lib/hooks/useGoals"
 import { useUserProfile } from "@/lib/hooks/useUserProfile"
 import { useNow } from "@/lib/hooks/useNow"
@@ -83,6 +86,7 @@ export default function InicioPage() {
   const { data: openInvoices, isLoading: loadingInvoices } = useOpenInvoices()
   const { data: pendingTransactions, isLoading: loadingPending } = usePendingTransactions()
   const { data: goals } = useGoals()
+  const { alerts } = useAlerts()
 
   const isLoading =
     loadingTransactions ||
@@ -201,6 +205,22 @@ export default function InicioPage() {
 
       {profile?.subscriptionStatus === "free_trial" && (
         <TrialBanner daysLeft={trialDaysRemaining(profile, now)} />
+      )}
+
+      {alerts.length > 0 && (
+        <div className="grid gap-2">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="text-sm font-medium">Precisa da sua atenção</h2>
+            {alerts.length > 3 && (
+              <Link href="/alertas" className="text-muted-foreground text-xs hover:underline">
+                ver todos ({alerts.length})
+              </Link>
+            )}
+          </div>
+          {/* Only the top three: the home screen answers "how am I", and a column of
+              warnings would make every opening of the app feel like bad news. */}
+          <AlertList alerts={alerts.slice(0, 3)} emptyLabel="" />
+        </div>
       )}
 
       <BalanceCard

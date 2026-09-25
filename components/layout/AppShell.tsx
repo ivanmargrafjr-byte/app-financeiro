@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
+  Bell,
   CreditCard,
   FileText,
   Home,
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
   { href: "/inicio", label: "Início", icon: Home },
   { href: "/dashboard", label: "Resumo", icon: LayoutDashboard },
   { href: "/fluxo", label: "Fluxo", icon: LineChart },
+  { href: "/alertas", label: "Alertas", icon: Bell },
   { href: "/contas", label: "Contas", icon: Wallet },
   { href: "/cartoes", label: "Cartões", icon: CreditCard },
   { href: "/transacoes", label: "Transações", icon: ListTree },
