@@ -155,6 +155,8 @@ export type FreeToSpend = {
   goalsCents: number
   /** Pending inflows — shown apart on purpose, never added to `cents`. */
   expectedIncomeCents: number
+  /** The part of that income the person marked as merely expected. */
+  uncertainIncomeCents: number
   /** What is actually free to spend; negative when the commitments outrun the money. */
   cents: number
 }
@@ -187,8 +189,10 @@ export function freeToSpend(input: {
   const committedCents = due
     .filter((t) => t.direction === "out")
     .reduce((total, t) => total + t.amountCents, 0)
-  const expectedIncomeCents = due
-    .filter((t) => t.direction === "in")
+  const incomeDue = due.filter((t) => t.direction === "in")
+  const expectedIncomeCents = incomeDue.reduce((total, t) => total + t.amountCents, 0)
+  const uncertainIncomeCents = incomeDue
+    .filter((t) => t.incomeExpectation === "esperada")
     .reduce((total, t) => total + t.amountCents, 0)
 
   const invoicesCents = input.openInvoices
@@ -211,6 +215,7 @@ export function freeToSpend(input: {
     reservedCents,
     goalsCents,
     expectedIncomeCents,
+    uncertainIncomeCents,
     cents: input.balanceCents - committedCents - invoicesCents - reservedCents - goalsCents,
   }
 }

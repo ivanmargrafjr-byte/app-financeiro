@@ -85,7 +85,16 @@ export function BalanceCard({
               <p className="text-muted-foreground border-border mt-1 border-t pt-1.5">
                 Fora da conta:{" "}
                 <Amount cents={free.expectedIncomeCents} hidden={hidden} size="sm" /> a receber
-                até {throughLabel}, ainda não creditados.
+                até {throughLabel}, ainda não creditados
+                {free.uncertainIncomeCents > 0 && (
+                  <>
+                    {" "}
+                    — sendo{" "}
+                    <Amount cents={free.uncertainIncomeCents} hidden={hidden} size="sm" /> apenas
+                    esperados
+                  </>
+                )}
+                .
               </p>
             )}
             <p className="text-muted-foreground/80">

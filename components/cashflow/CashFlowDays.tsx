@@ -65,7 +65,17 @@ export function CashFlowDays({
                       imageUrl={item.iconUrl}
                     />
                   )}
-                  <span className="min-w-0 flex-1 truncate">{item.description}</span>
+                  <span className="min-w-0 flex-1 truncate">
+                    {item.description}
+                    {item.counterparty && (
+                      <span className="text-muted-foreground"> · {item.counterparty}</span>
+                    )}
+                    {item.expectation === "esperada" && (
+                      <span className="bg-muted text-muted-foreground ml-1.5 rounded px-1 text-[10px]">
+                        esperada
+                      </span>
+                    )}
+                  </span>
                   <Amount
                     cents={item.direction === "in" ? item.amountCents : -item.amountCents}
                     hidden={hidden}

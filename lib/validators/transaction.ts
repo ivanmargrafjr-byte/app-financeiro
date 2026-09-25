@@ -7,6 +7,9 @@ export const accountTransactionSchema = z.object({
   categoryId: z.string().min(1, "Selecione uma categoria"),
   accountId: z.string().min(1, "Selecione uma conta"),
   date: z.string().min(1, "Informe a data"),
+  /** Only meaningful for income: how sure the money is. */
+  incomeExpectation: z.enum(["confirmada", "esperada"]).default("confirmada"),
+  counterparty: z.string().optional(),
 })
 export type AccountTransactionFormValues = z.output<typeof accountTransactionSchema>
 export type AccountTransactionFormInput = z.input<typeof accountTransactionSchema>

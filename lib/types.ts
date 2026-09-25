@@ -83,6 +83,14 @@ export type Transaction = {
   ofxFitId?: string
   /** The statement import that created (or settled) this entry, when it came from one. */
   importBatchId?: string
+  /**
+   * How sure a pending income is. Absent means confirmed — every entry written before
+   * this existed was treated as certain, and quietly making them uncertain would move
+   * projections nobody asked to change.
+   */
+  incomeExpectation?: "confirmada" | "esperada"
+  /** Who owes it, for a receivable or a reimbursement. */
+  counterparty?: string
 
   // origin === 'account'
   accountId?: string

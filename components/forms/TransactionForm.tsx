@@ -54,6 +54,8 @@ export function TransactionForm({
       categoryId: "",
       accountId: "",
       date: todayDateString(),
+      incomeExpectation: "confirmada",
+      counterparty: "",
       ...defaultValues,
     },
   })
@@ -163,6 +165,56 @@ export function TransactionForm({
             </FormItem>
           )}
         />
+        {direction === "in" && (
+          <div className="border-border grid gap-4 rounded-lg border p-3">
+            <p className="text-muted-foreground text-xs">
+              Receita ainda não recebida. Dizer o quanto ela é certa muda a projeção: o
+              cenário prudente do fluxo deixa de fora o que é apenas esperado.
+            </p>
+            <FormField
+              control={form.control}
+              name="incomeExpectation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quão certa é</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue>
+                          {(value: string) =>
+                            value === "esperada" ? "Esperada" : "Confirmada para a data"
+                          }
+                        </SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="confirmada">Confirmada para a data</SelectItem>
+                      <SelectItem value="esperada">Esperada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="counterparty"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>De quem (opcional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Cliente, empresa, pessoa"
+                      {...field}
+                      value={(field.value as string | undefined) ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        )}
         <FormField
           control={form.control}
           name="categoryId"

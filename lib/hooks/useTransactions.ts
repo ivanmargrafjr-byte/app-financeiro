@@ -59,6 +59,8 @@ export function mapTransactionDoc(id: string, data: Record<string, unknown>): Tr
     ofxFitId: data.ofxFitId as string | undefined,
     importBatchId: data.importBatchId as string | undefined,
     counterAccountId: data.counterAccountId as string | undefined,
+    incomeExpectation: data.incomeExpectation as Transaction["incomeExpectation"],
+    counterparty: data.counterparty as string | undefined,
     transferGroupId: data.transferGroupId as string | undefined,
     settledVia: data.settledVia as Transaction["settledVia"],
     linkedCardId: data.linkedCardId as string | undefined,
@@ -231,6 +233,14 @@ export function useCreateAccountTransaction() {
         competenceMonth: monthOfDate(values.date),
         accountId: values.accountId,
         settled: false,
+        // Only income carries these: on an expense they would be noise, and a field
+        // that means nothing half the time stops being read where it does.
+        ...(values.direction === "in"
+          ? {
+              incomeExpectation: values.incomeExpectation,
+              counterparty: values.counterparty?.trim() || null,
+            }
+          : { incomeExpectation: null, counterparty: null }),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
@@ -298,6 +308,12 @@ export function useUpdateAccountTransaction() {
           date: values.date,
           competenceMonth: monthOfDate(values.date),
           accountId: values.accountId,
+          ...(values.direction === "in"
+            ? {
+                incomeExpectation: values.incomeExpectation,
+                counterparty: values.counterparty?.trim() || null,
+              }
+            : { incomeExpectation: null, counterparty: null }),
           updatedAt: serverTimestamp(),
         })
       })

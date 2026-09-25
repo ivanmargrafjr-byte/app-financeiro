@@ -21,6 +21,10 @@ export type CashFlowItem = {
   amountCents: number
   direction: TransactionDirection
   kind: CashFlowKind
+  /** Only on income: how sure it is. */
+  expectation?: "confirmada" | "esperada"
+  /** Only on a receivable: who owes it. */
+  counterparty?: string
   icon?: string
   iconUrl?: string
   color?: string
@@ -69,11 +73,22 @@ export function buildCashFlow(input: {
   cardsById: Map<string, Card>
   /** What-if entries from the simulator; never written anywhere. */
   simulated?: CashFlowItem[]
+  /**
+   * Leave out income marked as merely expected — the prudent scenario. Planning
+   * around money that may not arrive is how a projection becomes a wish.
+   */
+  confirmedIncomeOnly?: boolean
 }): CashFlow {
   const lastDay = addDays(input.today, input.days)
 
   const fromTransactions: CashFlowItem[] = input.transactions
     .filter((t) => isPending(t) && t.date <= lastDay)
+    .filter(
+      (t) =>
+        !input.confirmedIncomeOnly ||
+        t.direction === "out" ||
+        t.incomeExpectation !== "esperada"
+    )
     .map((t) => ({
       id: t.id,
       date: clampToToday(t.date, input.today),
@@ -81,6 +96,8 @@ export function buildCashFlow(input: {
       amountCents: t.amountCents,
       direction: t.direction,
       kind: "lancamento" as const,
+      expectation: t.incomeExpectation,
+      counterparty: t.counterparty,
       icon: t.categoryIcon,
       iconUrl: t.categoryIconUrl,
       color: t.categoryColor || DEFAULT_CATEGORY_COLOR,

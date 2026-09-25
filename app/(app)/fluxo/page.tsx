@@ -6,6 +6,7 @@ import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Switch } from "@/components/ui/switch"
 import { CashFlowChart } from "@/components/cashflow/CashFlowChart"
 import { CashFlowDays } from "@/components/cashflow/CashFlowDays"
 import { CashFlowSummary } from "@/components/cashflow/CashFlowSummary"
@@ -26,6 +27,7 @@ export default function FluxoPage() {
   const [today] = useState(() => todayDateString())
   const [days, setDays] = useState<number>(30)
   const [simulated, setSimulated] = useState<CashFlowItem[]>([])
+  const [confirmedIncomeOnly, setConfirmedIncomeOnly] = useState(false)
 
   const { data: accounts, isLoading: loadingAccounts } = useAccounts()
   const { data: cards, isLoading: loadingCards } = useCards()
@@ -50,8 +52,9 @@ export default function FluxoPage() {
       openInvoices: openInvoices ?? [],
       cardsById: new Map([...(cards ?? []), ...(archivedCards ?? [])].map((c) => [c.id, c])),
       simulated,
+      confirmedIncomeOnly,
     })
-  }, [accounts, cards, archivedCards, openInvoices, pending, simulated, today, days])
+  }, [accounts, cards, archivedCards, openInvoices, pending, simulated, today, days, confirmedIncomeOnly])
 
   if (isLoading) {
     return (
@@ -91,6 +94,18 @@ export default function FluxoPage() {
         <CardContent className="grid gap-3">
           <CashFlowChart flow={flow} hidden={false} />
           <CashFlowSummary flow={flow} days={days} />
+          <label className="flex items-center justify-between gap-2 text-sm">
+            <span>
+              Cenário prudente
+              <span className="text-muted-foreground block text-xs">
+                Deixa de fora as receitas marcadas como apenas esperadas.
+              </span>
+            </span>
+            <Switch
+              checked={confirmedIncomeOnly}
+              onCheckedChange={(checked) => setConfirmedIncomeOnly(checked)}
+            />
+          </label>
         </CardContent>
       </Card>
 

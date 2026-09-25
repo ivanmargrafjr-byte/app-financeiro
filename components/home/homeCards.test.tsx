@@ -46,6 +46,7 @@ describe("BalanceCard", () => {
     reservedCents: 0,
     goalsCents: 0,
     expectedIncomeCents: 0,
+    uncertainIncomeCents: 0,
     cents: 613196,
   }
 

@@ -165,3 +165,57 @@ describe("buildCashFlow", () => {
     expect(flow.firstNegative).toEqual({ date: TODAY, cents: -5000 })
   })
 })
+
+describe("buildCashFlow with the prudent scenario", () => {
+  const expected = tx({
+    id: "freela",
+    direction: "in",
+    amountCents: 300000,
+    description: "Freela",
+    date: "2026-09-30",
+    incomeExpectation: "esperada",
+    counterparty: "Cliente X",
+  })
+  const confirmed = tx({
+    id: "salario",
+    direction: "in",
+    amountCents: 400000,
+    description: "Salário",
+    date: "2026-09-30",
+    incomeExpectation: "confirmada",
+  })
+
+  it("counts every income when the scenario is not prudent", () => {
+    const flow = buildCashFlow({ ...base, transactions: [expected, confirmed] })
+
+    expect(flow.endBalanceCents).toBe(100000 + 700000)
+  })
+
+  it("leaves out what is merely expected when it is", () => {
+    const flow = buildCashFlow({
+      ...base,
+      transactions: [expected, confirmed],
+      confirmedIncomeOnly: true,
+    })
+
+    expect(flow.endBalanceCents).toBe(100000 + 400000)
+  })
+
+  it("never drops an expense, however prudent the scenario", () => {
+    const flow = buildCashFlow({
+      ...base,
+      transactions: [tx({ id: "conta", amountCents: 50000, date: "2026-09-26" })],
+      confirmedIncomeOnly: true,
+    })
+
+    expect(flow.endBalanceCents).toBe(50000)
+  })
+
+  it("carries who owes a receivable into the day it lands", () => {
+    const flow = buildCashFlow({ ...base, transactions: [expected] })
+    const day = daysWithMovement(flow)[0]
+
+    expect(day.items[0].counterparty).toBe("Cliente X")
+    expect(day.items[0].expectation).toBe("esperada")
+  })
+})
