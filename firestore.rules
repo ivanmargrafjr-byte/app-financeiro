@@ -23,6 +23,59 @@ service cloud.firestore {
       ];
     }
 
+    /**
+     * Shared spaces live outside /users because more than one person reads them.
+     *
+     * A space holds only what someone chose to put in it: expenses entered there and
+     * settlements between participants. No rule here can reach a member's own accounts,
+     * cards or entries — sharing the house expenses must never become a window into a
+     * salary, and keeping the shared data in its own place is what guarantees that.
+     */
+    function spaceData(spaceId) {
+      return get(/databases/$(database)/documents/spaces/$(spaceId)).data;
+    }
+    function isSpaceMember(spaceId) {
+      return request.auth != null && request.auth.uid in spaceData(spaceId).memberUids;
+    }
+
+    match /spaces/{spaceId} {
+      function isMember() {
+        return request.auth != null && request.auth.uid in resource.data.memberUids;
+      }
+      function isOwner() {
+        return request.auth != null && request.auth.uid == resource.data.ownerUid;
+      }
+      function isInvited() {
+        return request.auth != null
+               && request.auth.token.email != null
+               && request.auth.token.email.lower() in resource.data.pendingEmails;
+      }
+      // An invited person may do exactly one thing: put themselves in and take their
+      // own invitation out. Anything else on the document stays untouched.
+      function onlyJoining() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['memberUids', 'pendingEmails'])
+               && request.auth.uid in request.resource.data.memberUids
+               && !(request.auth.token.email.lower() in request.resource.data.pendingEmails)
+               && request.resource.data.ownerUid == resource.data.ownerUid;
+      }
+
+      allow read: if isMember() || isInvited();
+      allow create: if request.auth != null
+                     && request.resource.data.ownerUid == request.auth.uid
+                     && request.auth.uid in request.resource.data.memberUids;
+      allow update: if (isMember() && request.resource.data.ownerUid == resource.data.ownerUid)
+                     || (isInvited() && onlyJoining());
+      allow delete: if isOwner();
+
+      match /expenses/{expenseId} {
+        allow read, write: if isSpaceMember(spaceId);
+      }
+      match /settlements/{settlementId} {
+        allow read, write: if isSpaceMember(spaceId);
+      }
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId)
