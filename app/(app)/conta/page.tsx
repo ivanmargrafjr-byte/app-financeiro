@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { DeleteAccountCard } from "@/components/account/DeleteAccountCard"
+import { SecurityCard } from "@/components/account/SecurityCard"
 import { useAuth } from "@/lib/auth/AuthProvider"
 import { useUserProfile } from "@/lib/hooks/useUserProfile"
 
@@ -27,6 +28,8 @@ export default function ContaPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <SecurityCard />
 
       <DeleteAccountCard />
     </div>
