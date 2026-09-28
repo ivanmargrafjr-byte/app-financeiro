@@ -107,7 +107,10 @@ export function useAlerts(): {
         byMonth.get(addMonths(currentMonth, -1)) ?? [],
         currentMonth
       ),
-      ...alertsFromDuplicates(byMonth.get(currentMonth) ?? []),
+      ...alertsFromDuplicates(
+        byMonth.get(currentMonth) ?? [],
+        new Map([...cardsById].map(([id, card]) => [id, card.name]))
+      ),
     ]).filter((alert) => !muted.includes(alert.kind) && !dismissed.includes(alert.id))
   }, [
     accounts,

@@ -139,6 +139,28 @@ export function alertsFromContracts(attention: ContractAttention[], withinDays =
     }))
 }
 
+/**
+ * Where an entry can actually be seen.
+ *
+ * A card purchase is not on /transacoes: that list leaves them out on purpose, because
+ * the fatura above it already shows them consolidated. An alert that linked there was
+ * pointing at a row the screen would never render — it looked like the highlight was
+ * broken, when the entry simply was not there.
+ *
+ * The month is the entry's competência, which is what /transacoes is scoped by. For a
+ * card purchase that is the invoice's month, not the month it was bought in — which is
+ * also why these alerts carry dates from weeks ago and are right to.
+ */
+function transactionTarget(
+  t: Transaction,
+  ids: string[]
+): { href: string; month?: MonthString } {
+  if (t.origin === "card" && t.cardId && t.invoiceId) {
+    return { href: withFocus(`/cartoes/${t.cardId}/faturas/${t.invoiceId}`, ids) }
+  }
+  return { href: withFocus("/transacoes", ids), month: t.competenceMonth }
+}
+
 /** Charges above a twentieth of the previous cycle — below that it is rounding, not a rise. */
 const RECURRING_TOLERANCE = 0.05
 
@@ -172,12 +194,16 @@ export function alertsFromRecurring(
         because: `Era ${formatCentsBRL(previous.amountCents)} e veio ${formatCentsBRL(
           t.amountCents
         )} em ${monthLabel(month).toLowerCase()}. Confira se houve reajuste.`,
-        href: withFocus("/transacoes", [t.id]),
-        month,
+        ...transactionTarget(t, [t.id]),
         date: t.date,
       },
     ]
   })
+}
+
+/** Same wording once case and stray spaces are set aside — "Padaria" and "padaria " match. */
+function sameDescriptionKey(description: string): string {
+  return description.trim().toLowerCase().replace(/\s+/g, " ")
 }
 
 /**
@@ -185,12 +211,21 @@ export function alertsFromRecurring(
  *
  * Only ever offered for review. Two identical charges on the same day are perfectly
  * possible — two coffees, two fares — so the app points and asks rather than deciding.
+ *
+ * The description is part of what makes two entries look alike. Without it, an imported
+ * fatura — where a whole statement can land under one category — turned every pair of
+ * same-day purchases of the same value into an alert: a padaria and a farmácia, both
+ * R$ 45 on the 12th, are not a duplicate of anything. It also made the alert's own text
+ * a small lie, since it quoted the first entry's description as if the group shared it.
  */
-export function alertsFromDuplicates(transactions: Transaction[]): Alert[] {
+export function alertsFromDuplicates(
+  transactions: Transaction[],
+  cardNameById: ReadonlyMap<string, string> = new Map()
+): Alert[] {
   const seen = new Map<string, Transaction[]>()
   for (const t of transactions) {
     if (t.direction !== "out" || t.installmentGroupId || t.origin === "transfer") continue
-    const key = `${t.date}|${t.amountCents}|${t.categoryId}`
+    const key = `${t.date}|${t.amountCents}|${t.categoryId}|${sameDescriptionKey(t.description)}`
     const list = seen.get(key)
     if (list) list.push(t)
     else seen.set(key, [t])
@@ -198,21 +233,26 @@ export function alertsFromDuplicates(transactions: Transaction[]): Alert[] {
 
   return [...seen.values()]
     .filter((group) => group.length > 1)
-    .map((group) => ({
-      id: `duplicidade-${group[0].id}`,
-      kind: "duplicidade" as const,
-      severity: "atencao" as const,
-      title: `${group.length} lançamentos iguais em ${formatDateBR(group[0].date)}`,
-      because: `${group[0].description} · ${formatCentsBRL(
-        group[0].amountCents
-      )}, na mesma categoria e no mesmo dia. Pode ser duplicidade — ou não, e aí basta ignorar.`,
-      href: withFocus(
-        "/transacoes",
-        group.map((t) => t.id)
-      ),
-      month: monthOfDate(group[0].date),
-      date: group[0].date,
-    }))
+    .map((group) => {
+      const cardName = group[0].cardId ? cardNameById.get(group[0].cardId) : undefined
+      // Named because these dates surprise: a purchase sits in the month its fatura
+      // falls due, so a September alert can be about the 28th of August and be right.
+      const where = cardName ? `, na fatura do ${cardName}` : ""
+      return {
+        id: `duplicidade-${group[0].id}`,
+        kind: "duplicidade" as const,
+        severity: "atencao" as const,
+        title: `${group.length} lançamentos iguais em ${formatDateBR(group[0].date)}`,
+        because: `${group[0].description} · ${formatCentsBRL(
+          group[0].amountCents
+        )}, na mesma categoria e no mesmo dia${where}. Pode ser duplicidade — ou não, e aí basta ignorar.`,
+        ...transactionTarget(
+          group[0],
+          group.map((t) => t.id)
+        ),
+        date: group[0].date,
+      }
+    })
 }
 
 /** Most urgent first, and within the same urgency, the soonest date. */

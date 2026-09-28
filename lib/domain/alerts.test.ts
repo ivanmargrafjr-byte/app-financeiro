@@ -207,6 +207,25 @@ describe("alertsFromRecurring", () => {
     expect(alert.month).toBe("2026-09")
   })
 
+  it("sends a recurring charge on a card to its fatura", () => {
+    const [alert] = alertsFromRecurring(
+      [
+        tx({
+          id: "atual",
+          origin: "card",
+          cardId: "card1",
+          invoiceId: "inv1",
+          recurringSeriesId: "r1",
+          amountCents: 13000,
+        }),
+      ],
+      [tx({ id: "anterior", recurringSeriesId: "r1", amountCents: 10000 })],
+      "2026-09"
+    )
+
+    expect(alert.href).toBe("/cartoes/card1/faturas/inv1?foco=atual")
+  })
+
   it("ignores a difference small enough to be rounding", () => {
     const alerts = alertsFromRecurring(
       [tx({ id: "atual", recurringSeriesId: "r1", amountCents: 10200 })],
@@ -246,6 +265,52 @@ describe("alertsFromDuplicates", () => {
     ])
 
     expect(alert.href).toBe("/transacoes?foco=a&foco=b")
+    expect(alert.month).toBe("2026-09")
+  })
+
+  it("does not flag two different purchases that happen to cost the same", () => {
+    // What an imported fatura looks like: one category for the whole statement. Without
+    // the description in the key, every same-day pair of equal values became an alert.
+    const alerts = alertsFromDuplicates([
+      tx({ id: "a", description: "Padaria", amountCents: 4500, categoryId: "outros" }),
+      tx({ id: "b", description: "Farmácia", amountCents: 4500, categoryId: "outros" }),
+    ])
+
+    expect(alerts).toEqual([])
+  })
+
+  it("still flags the same purchase entered twice, however it was typed", () => {
+    const alerts = alertsFromDuplicates([
+      tx({ id: "a", description: "Padaria" }),
+      tx({ id: "b", description: " padaria " }),
+    ])
+
+    expect(alerts).toHaveLength(1)
+  })
+
+  it("sends a card purchase to its fatura, the only screen that shows it", () => {
+    const [alert] = alertsFromDuplicates(
+      [
+        tx({ id: "a", origin: "card", cardId: "card1", invoiceId: "inv1" }),
+        tx({ id: "b", origin: "card", cardId: "card1", invoiceId: "inv1" }),
+      ],
+      new Map([["card1", "Nubank"]])
+    )
+
+    expect(alert.href).toBe("/cartoes/card1/faturas/inv1?foco=a&foco=b")
+    // No month: the fatura screen is not scoped by the month switcher.
+    expect(alert.month).toBeUndefined()
+    expect(alert.because).toContain("na fatura do Nubank")
+  })
+
+  it("uses the entry's competência for the month, not the date it happened", () => {
+    // A card purchase sits in the month its fatura falls due; an account entry can be
+    // moved the same way. /transacoes is scoped by competência, so that is what to open.
+    const [alert] = alertsFromDuplicates([
+      tx({ id: "a", date: "2026-08-28", competenceMonth: "2026-09" }),
+      tx({ id: "b", date: "2026-08-28", competenceMonth: "2026-09" }),
+    ])
+
     expect(alert.month).toBe("2026-09")
   })
 

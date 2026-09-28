@@ -39,6 +39,9 @@ import {
 } from "@/lib/hooks/useInvoices"
 import { formatCentsBRL } from "@/lib/domain/money"
 import { monthLabel, monthOfDate } from "@/lib/domain/dateUtils"
+import { useFocusedIds, useScrollToFocus } from "@/lib/navigation/FocusProvider"
+import { FOCUS_CLASS, focusAnchorId } from "@/lib/navigation/focus"
+import { cn } from "@/lib/utils"
 import type { Transaction } from "@/lib/types"
 
 export default function InvoiceDetailPage({
@@ -50,6 +53,11 @@ export default function InvoiceDetailPage({
   const { data: cards } = useCards()
   const { data: invoice, isLoading } = useInvoice(invoiceId)
   const { data: transactions, isLoading: isLoadingTx } = useInvoiceTransactions(invoiceId)
+
+  // A duplicidade alert about a card purchase lands here, not on /transacoes: this is
+  // the only screen that shows the purchase itself.
+  const focusedIds = useFocusedIds()
+  useScrollToFocus(!isLoadingTx)
   const payInvoice = usePayInvoice()
   const deleteTransaction = useDeleteCardTransaction()
   const deleteTransactions = useDeleteCardTransactions()
@@ -224,10 +232,12 @@ export default function InvoiceDetailPage({
         {transactions?.map((tx) => (
           <div
             key={tx.id}
-            className={
-              "border-border bg-card flex items-center justify-between gap-2 rounded-md border px-3 py-2" +
-              (selecting ? " cursor-pointer select-none" : "")
-            }
+            id={focusAnchorId(tx.id)}
+            className={cn(
+              "border-border bg-card flex items-center justify-between gap-2 rounded-md border px-3 py-2",
+              selecting && "cursor-pointer select-none",
+              focusedIds.has(tx.id) && FOCUS_CLASS
+            )}
             onClick={selecting ? () => toggleSelected(tx.id, !selectedIds.has(tx.id)) : undefined}
           >
             <div className="flex min-w-0 items-center gap-3">
