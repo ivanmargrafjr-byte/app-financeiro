@@ -22,8 +22,9 @@ import { goalProgress, type Goal } from "@/lib/domain/goals"
 import type { BudgetLine } from "@/lib/domain/budget"
 import type { CashFlow } from "@/lib/domain/cashFlow"
 import type { ContractAttention } from "@/lib/domain/contractLifecycle"
+import { countsInMonthlyTotals } from "@/lib/domain/monthlyTotals"
 import { withFocus } from "@/lib/navigation/focus"
-import type { Transaction } from "@/lib/types"
+import type { Card, Transaction } from "@/lib/types"
 
 export type AlertKind = "saldo" | "orcamento" | "meta" | "contrato" | "recorrencia" | "duplicidade"
 
@@ -170,18 +171,23 @@ const RECURRING_TOLERANCE = 0.05
  * Says "confira se houve reajuste", not "cobrança indevida": the app knows the two
  * amounts and nothing about the reason.
  */
-export function alertsFromRecurring(
-  currentMonth: Transaction[],
-  previousMonth: Transaction[],
-  month: string
-): Alert[] {
+export function alertsFromRecurring(input: {
+  currentMonth: Transaction[]
+  previousMonth: Transaction[]
+  month: MonthString
+  /** Needed to skip a replaced card's stale copy of the same charge — see countsInMonthlyTotals. */
+  archivedCardsById: Map<string, Card>
+}): Alert[] {
+  const { month, archivedCardsById } = input
+  const counts = (t: Transaction) => countsInMonthlyTotals(t, archivedCardsById)
+
   const previousBySeries = new Map<string, Transaction>()
-  for (const t of previousMonth) {
-    if (t.recurringSeriesId) previousBySeries.set(t.recurringSeriesId, t)
+  for (const t of input.previousMonth) {
+    if (t.recurringSeriesId && counts(t)) previousBySeries.set(t.recurringSeriesId, t)
   }
 
-  return currentMonth.flatMap((t) => {
-    if (!t.recurringSeriesId || t.direction !== "out") return []
+  return input.currentMonth.flatMap((t) => {
+    if (!t.recurringSeriesId || t.direction !== "out" || !counts(t)) return []
     const previous = previousBySeries.get(t.recurringSeriesId)
     if (!previous || previous.amountCents <= 0) return []
     if (t.amountCents <= previous.amountCents * (1 + RECURRING_TOLERANCE)) return []
@@ -212,20 +218,42 @@ function sameDescriptionKey(description: string): string {
  * Only ever offered for review. Two identical charges on the same day are perfectly
  * possible — two coffees, two fares — so the app points and asks rather than deciding.
  *
- * The description is part of what makes two entries look alike. Without it, an imported
- * fatura — where a whole statement can land under one category — turned every pair of
- * same-day purchases of the same value into an alert: a padaria and a farmácia, both
- * R$ 45 on the 12th, are not a duplicate of anything. It also made the alert's own text
- * a small lie, since it quoted the first entry's description as if the group shared it.
+ * The hard part is not finding pairs, it is not inventing them. The app keeps several
+ * deliberate second copies of a charge, and each one is a perfect match for the entry it
+ * copies — same day, same amount, same category, same description:
+ *
+ * - a card that was replaced keeps its old entries, and from its cutoff month on they
+ *   are a stale copy of what the new card carries;
+ * - an entry paid with a card stays in place as a checked marker while the real charge
+ *   goes onto the fatura.
+ *
+ * countsInMonthlyTotals is the one rule that knows which copy is the real one, and every
+ * total in the app already goes through it. This was the one place that did not, which is
+ * why it reported pairs that could not be found on any screen.
+ *
+ * Two entries also have to live in the same place to be offered together: the alert links
+ * to one screen, and a pair split across two faturas cannot be checked there. The
+ * description counts too — on an imported fatura, where a whole statement can land under
+ * one category, a padaria and a farmácia both at R$ 45 on the 12th are not a duplicate of
+ * anything.
  */
-export function alertsFromDuplicates(
-  transactions: Transaction[],
-  cardNameById: ReadonlyMap<string, string> = new Map()
-): Alert[] {
+export function alertsFromDuplicates(input: {
+  transactions: Transaction[]
+  archivedCardsById: Map<string, Card>
+  cardNameById?: ReadonlyMap<string, string>
+}): Alert[] {
+  const cardNameById = input.cardNameById ?? new Map<string, string>()
+
   const seen = new Map<string, Transaction[]>()
-  for (const t of transactions) {
-    if (t.direction !== "out" || t.installmentGroupId || t.origin === "transfer") continue
-    const key = `${t.date}|${t.amountCents}|${t.categoryId}|${sameDescriptionKey(t.description)}`
+  for (const t of input.transactions) {
+    if (t.direction !== "out" || t.installmentGroupId) continue
+    if (!countsInMonthlyTotals(t, input.archivedCardsById)) continue
+    // The fatura an entry sits on, or "conta" for everything else: /transacoes shows all
+    // accounts in one list, so those rows can be compared side by side.
+    const place = t.origin === "card" ? (t.invoiceId ?? "fatura") : "conta"
+    const key = `${place}|${t.date}|${t.amountCents}|${t.categoryId}|${sameDescriptionKey(
+      t.description
+    )}`
     const list = seen.get(key)
     if (list) list.push(t)
     else seen.set(key, [t])

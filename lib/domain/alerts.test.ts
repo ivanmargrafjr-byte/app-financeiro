@@ -14,7 +14,7 @@ import type { BudgetLine } from "./budget"
 import type { Goal } from "./goals"
 import type { ContractAttention } from "./contractLifecycle"
 import { formatCentsBRL } from "./money"
-import type { Category, Contract, Transaction } from "@/lib/types"
+import type { Card, Category, Contract, Transaction } from "@/lib/types"
 
 const TODAY = "2026-09-24"
 
@@ -191,12 +191,34 @@ describe("alertsFromContracts", () => {
   })
 })
 
+/** The two builders below read a month of entries; both need the card cutoff. */
+function recurring(
+  currentMonth: Transaction[],
+  previousMonth: Transaction[],
+  archivedCardsById: Map<string, Card> = new Map()
+) {
+  return alertsFromRecurring({ currentMonth, previousMonth, month: "2026-09", archivedCardsById })
+}
+
+function duplicates(
+  transactions: Transaction[],
+  options: {
+    cardNameById?: Map<string, string>
+    archivedCardsById?: Map<string, Card>
+  } = {}
+) {
+  return alertsFromDuplicates({
+    transactions,
+    archivedCardsById: options.archivedCardsById ?? new Map(),
+    cardNameById: options.cardNameById,
+  })
+}
+
 describe("alertsFromRecurring", () => {
   it("points at a charge that came in higher, without calling it wrong", () => {
-    const [alert] = alertsFromRecurring(
+    const [alert] = recurring(
       [tx({ id: "atual", recurringSeriesId: "r1", amountCents: 13000 })],
-      [tx({ id: "anterior", recurringSeriesId: "r1", amountCents: 10000 })],
-      "2026-09"
+      [tx({ id: "anterior", recurringSeriesId: "r1", amountCents: 10000 })]
     )
 
     expect(alert.title).toBe("Internet veio maior este mês")
@@ -208,7 +230,7 @@ describe("alertsFromRecurring", () => {
   })
 
   it("sends a recurring charge on a card to its fatura", () => {
-    const [alert] = alertsFromRecurring(
+    const [alert] = recurring(
       [
         tx({
           id: "atual",
@@ -219,28 +241,51 @@ describe("alertsFromRecurring", () => {
           amountCents: 13000,
         }),
       ],
-      [tx({ id: "anterior", recurringSeriesId: "r1", amountCents: 10000 })],
-      "2026-09"
+      [tx({ id: "anterior", recurringSeriesId: "r1", amountCents: 10000 })]
     )
 
     expect(alert.href).toBe("/cartoes/card1/faturas/inv1?foco=atual")
   })
 
-  it("ignores a difference small enough to be rounding", () => {
-    const alerts = alertsFromRecurring(
-      [tx({ id: "atual", recurringSeriesId: "r1", amountCents: 10200 })],
+  it("ignores a replaced card's stale copy of the same charge", () => {
+    const antigo: Card = {
+      id: "antigo",
+      name: "Cartão antigo",
+      archived: true,
+      archivedFromMonth: "2026-09",
+    } as Card
+
+    const alerts = recurring(
+      [
+        tx({
+          id: "velho",
+          origin: "card",
+          cardId: "antigo",
+          invoiceId: "inv-antiga",
+          recurringSeriesId: "r1",
+          amountCents: 13000,
+        }),
+      ],
       [tx({ id: "anterior", recurringSeriesId: "r1", amountCents: 10000 })],
-      "2026-09"
+      new Map([["antigo", antigo]])
+    )
+
+    expect(alerts).toEqual([])
+  })
+
+  it("ignores a difference small enough to be rounding", () => {
+    const alerts = recurring(
+      [tx({ id: "atual", recurringSeriesId: "r1", amountCents: 10200 })],
+      [tx({ id: "anterior", recurringSeriesId: "r1", amountCents: 10000 })]
     )
 
     expect(alerts).toEqual([])
   })
 
   it("ignores a charge that went down", () => {
-    const alerts = alertsFromRecurring(
+    const alerts = recurring(
       [tx({ id: "atual", recurringSeriesId: "r1", amountCents: 8000 })],
-      [tx({ id: "anterior", recurringSeriesId: "r1", amountCents: 10000 })],
-      "2026-09"
+      [tx({ id: "anterior", recurringSeriesId: "r1", amountCents: 10000 })]
     )
 
     expect(alerts).toEqual([])
@@ -249,7 +294,7 @@ describe("alertsFromRecurring", () => {
 
 describe("alertsFromDuplicates", () => {
   it("offers two identical entries for review", () => {
-    const [alert] = alertsFromDuplicates([
+    const [alert] = duplicates([
       tx({ id: "a", amountCents: 4500, description: "Padaria" }),
       tx({ id: "b", amountCents: 4500, description: "Padaria" }),
     ])
@@ -259,7 +304,7 @@ describe("alertsFromDuplicates", () => {
   })
 
   it("points at every entry of the group, not only the first", () => {
-    const [alert] = alertsFromDuplicates([
+    const [alert] = duplicates([
       tx({ id: "a", date: "2026-09-12", amountCents: 4500 }),
       tx({ id: "b", date: "2026-09-12", amountCents: 4500 }),
     ])
@@ -271,7 +316,7 @@ describe("alertsFromDuplicates", () => {
   it("does not flag two different purchases that happen to cost the same", () => {
     // What an imported fatura looks like: one category for the whole statement. Without
     // the description in the key, every same-day pair of equal values became an alert.
-    const alerts = alertsFromDuplicates([
+    const alerts = duplicates([
       tx({ id: "a", description: "Padaria", amountCents: 4500, categoryId: "outros" }),
       tx({ id: "b", description: "Farmácia", amountCents: 4500, categoryId: "outros" }),
     ])
@@ -280,7 +325,7 @@ describe("alertsFromDuplicates", () => {
   })
 
   it("still flags the same purchase entered twice, however it was typed", () => {
-    const alerts = alertsFromDuplicates([
+    const alerts = duplicates([
       tx({ id: "a", description: "Padaria" }),
       tx({ id: "b", description: " padaria " }),
     ])
@@ -289,12 +334,12 @@ describe("alertsFromDuplicates", () => {
   })
 
   it("sends a card purchase to its fatura, the only screen that shows it", () => {
-    const [alert] = alertsFromDuplicates(
+    const [alert] = duplicates(
       [
         tx({ id: "a", origin: "card", cardId: "card1", invoiceId: "inv1" }),
         tx({ id: "b", origin: "card", cardId: "card1", invoiceId: "inv1" }),
       ],
-      new Map([["card1", "Nubank"]])
+      { cardNameById: new Map([["card1", "Nubank"]]) }
     )
 
     expect(alert.href).toBe("/cartoes/card1/faturas/inv1?foco=a&foco=b")
@@ -303,10 +348,82 @@ describe("alertsFromDuplicates", () => {
     expect(alert.because).toContain("na fatura do Nubank")
   })
 
+  it("does not pair a replaced card's stale copy with the live one", () => {
+    // The pair that made every alert unverifiable: from its cutoff month on, the old
+    // card's entries are a copy of what the new card carries, so opening either fatura
+    // showed a single entry and no duplicate to compare it with.
+    const antigo: Card = {
+      id: "antigo",
+      name: "Cartão antigo",
+      archived: true,
+      archivedFromMonth: "2026-09",
+    } as Card
+
+    const alerts = duplicates(
+      [
+        tx({ id: "velho", origin: "card", cardId: "antigo", invoiceId: "inv-antiga" }),
+        tx({ id: "novo", origin: "card", cardId: "novo", invoiceId: "inv-nova" }),
+      ],
+      { archivedCardsById: new Map([["antigo", antigo]]) }
+    )
+
+    expect(alerts).toEqual([])
+  })
+
+  it("keeps the old card's own months, which exist nowhere else", () => {
+    const antigo: Card = {
+      id: "antigo",
+      name: "Cartão antigo",
+      archived: true,
+      archivedFromMonth: "2026-10",
+    } as Card
+
+    const alerts = duplicates(
+      [
+        tx({ id: "a", origin: "card", cardId: "antigo", invoiceId: "inv1" }),
+        tx({ id: "b", origin: "card", cardId: "antigo", invoiceId: "inv1" }),
+      ],
+      { archivedCardsById: new Map([["antigo", antigo]]) }
+    )
+
+    expect(alerts).toHaveLength(1)
+  })
+
+  it("does not pair an entry paid with a card against the charge it created", () => {
+    // Settling with a card copies description, category and amount onto the fatura and
+    // leaves the original in place as a checked marker. A perfect match, by design.
+    const alerts = duplicates([
+      tx({ id: "marcador", settledVia: "card" }),
+      tx({ id: "compra", origin: "card", cardId: "card1", invoiceId: "inv1" }),
+    ])
+
+    expect(alerts).toEqual([])
+  })
+
+  it("does not pair entries sitting on two different faturas", () => {
+    // The alert links to one screen; a pair split across two faturas cannot be checked
+    // there, which is what "não trazem nenhum outro valor parecido" looked like.
+    const alerts = duplicates([
+      tx({ id: "a", origin: "card", cardId: "card1", invoiceId: "inv1" }),
+      tx({ id: "b", origin: "card", cardId: "card2", invoiceId: "inv2" }),
+    ])
+
+    expect(alerts).toEqual([])
+  })
+
+  it("does not pair a card purchase with an account entry that looks like it", () => {
+    const alerts = duplicates([
+      tx({ id: "conta" }),
+      tx({ id: "cartao", origin: "card", cardId: "card1", invoiceId: "inv1" }),
+    ])
+
+    expect(alerts).toEqual([])
+  })
+
   it("uses the entry's competência for the month, not the date it happened", () => {
     // A card purchase sits in the month its fatura falls due; an account entry can be
     // moved the same way. /transacoes is scoped by competência, so that is what to open.
-    const [alert] = alertsFromDuplicates([
+    const [alert] = duplicates([
       tx({ id: "a", date: "2026-08-28", competenceMonth: "2026-09" }),
       tx({ id: "b", date: "2026-08-28", competenceMonth: "2026-09" }),
     ])
@@ -315,7 +432,7 @@ describe("alertsFromDuplicates", () => {
   })
 
   it("does not flag instalments of the same purchase", () => {
-    const alerts = alertsFromDuplicates([
+    const alerts = duplicates([
       tx({ id: "a", installmentGroupId: "g1" }),
       tx({ id: "b", installmentGroupId: "g1" }),
     ])
@@ -324,7 +441,7 @@ describe("alertsFromDuplicates", () => {
   })
 
   it("does not flag two different categories on the same day", () => {
-    const alerts = alertsFromDuplicates([
+    const alerts = duplicates([
       tx({ id: "a", categoryId: "casa" }),
       tx({ id: "b", categoryId: "lazer" }),
     ])

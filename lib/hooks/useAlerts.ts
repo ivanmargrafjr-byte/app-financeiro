@@ -102,15 +102,17 @@ export function useAlerts(): {
       ...alertsFromBudgets(lines, currentMonth),
       ...alertsFromGoals(goals ?? [], today),
       ...alertsFromContracts(contractsNeedingAttention(contracts ?? [], today)),
-      ...alertsFromRecurring(
-        byMonth.get(currentMonth) ?? [],
-        byMonth.get(addMonths(currentMonth, -1)) ?? [],
-        currentMonth
-      ),
-      ...alertsFromDuplicates(
-        byMonth.get(currentMonth) ?? [],
-        new Map([...cardsById].map(([id, card]) => [id, card.name]))
-      ),
+      ...alertsFromRecurring({
+        currentMonth: byMonth.get(currentMonth) ?? [],
+        previousMonth: byMonth.get(addMonths(currentMonth, -1)) ?? [],
+        month: currentMonth,
+        archivedCardsById: archivedById,
+      }),
+      ...alertsFromDuplicates({
+        transactions: byMonth.get(currentMonth) ?? [],
+        archivedCardsById: archivedById,
+        cardNameById: new Map([...cardsById].map(([id, card]) => [id, card.name])),
+      }),
     ]).filter((alert) => !muted.includes(alert.kind) && !dismissed.includes(alert.id))
   }, [
     accounts,
