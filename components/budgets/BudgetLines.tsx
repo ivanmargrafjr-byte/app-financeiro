@@ -1,5 +1,6 @@
 import { Amount } from "@/components/home/Amount"
 import { EntityIcon } from "@/components/forms/EntityIcon"
+import { FOCUS_CLASS, focusAnchorId } from "@/lib/navigation/focus"
 import { cn } from "@/lib/utils"
 import type { BudgetLine } from "@/lib/domain/budget"
 
@@ -19,10 +20,13 @@ const STATUS_STYLE = {
 export function BudgetLines({
   lines,
   hidden = false,
+  focusedIds,
   action,
 }: {
   lines: BudgetLine[]
   hidden?: boolean
+  /** Categories an alert is pointing at — ringed on arrival. */
+  focusedIds?: ReadonlySet<string>
   /** Rendered at the end of each row — the edit control lives outside this file. */
   action?: (line: BudgetLine) => React.ReactNode
 }) {
@@ -42,7 +46,11 @@ export function BudgetLines({
         return (
           <li
             key={line.category.id}
-            className="border-border bg-card grid gap-1.5 rounded-lg border px-3 py-2.5"
+            id={focusAnchorId(line.category.id)}
+            className={cn(
+              "border-border bg-card grid gap-1.5 rounded-lg border px-3 py-2.5",
+              focusedIds?.has(line.category.id) && FOCUS_CLASS
+            )}
           >
             <div className="flex items-center justify-between gap-2">
               <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium">

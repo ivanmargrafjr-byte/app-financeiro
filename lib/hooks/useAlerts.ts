@@ -99,7 +99,7 @@ export function useAlerts(): {
 
     return sortAlerts([
       ...alertsFromCashFlow(flow),
-      ...alertsFromBudgets(lines),
+      ...alertsFromBudgets(lines, currentMonth),
       ...alertsFromGoals(goals ?? [], today),
       ...alertsFromContracts(contractsNeedingAttention(contracts ?? [], today)),
       ...alertsFromRecurring(

@@ -36,6 +36,7 @@ import { monthLabel, monthOfDate, todayDateString } from "@/lib/domain/dateUtils
 import { cardCountsInMonth } from "@/lib/domain/cardCutoff"
 import { estimateBalanceThrough, estimateHorizon } from "@/lib/domain/homeSummary"
 import { useMonth } from "@/lib/month/MonthProvider"
+import { useFocusedIds, useScrollToFocus } from "@/lib/navigation/FocusProvider"
 import type { AccountTransactionFormValues } from "@/lib/validators/transaction"
 import type { TransferFormValues } from "@/lib/validators/transfer"
 
@@ -58,6 +59,10 @@ export default function TransacoesPage() {
   // Frozen for the life of the screen, as on the tela de início: a date that moved
   // mid-session would slide the estimate's horizon under the user.
   const [today] = useState(() => todayDateString())
+
+  // An alert can land here pointing at one entry — see AlertList.
+  const focusedIds = useFocusedIds()
+  useScrollToFocus(!isLoading)
 
   // visibleTx below never includes origin==='card' entries, so this only ever looks up accounts.
   const sourceLabel = (tx: { accountId?: string }) =>
@@ -278,7 +283,12 @@ export default function TransacoesPage() {
 
       <div className="grid grid-cols-1 gap-2">
         {visibleTx.map((tx) => (
-          <TransactionListItem key={tx.id} tx={tx} accountName={sourceLabel(tx)} />
+          <TransactionListItem
+            key={tx.id}
+            tx={tx}
+            accountName={sourceLabel(tx)}
+            focused={focusedIds.has(tx.id)}
+          />
         ))}
       </div>
     </div>

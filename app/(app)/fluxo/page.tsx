@@ -17,6 +17,7 @@ import { useOpenInvoices } from "@/lib/hooks/useInvoices"
 import { usePendingTransactions } from "@/lib/hooks/useTransactions"
 import { buildCashFlow, type CashFlowItem } from "@/lib/domain/cashFlow"
 import { todayDateString } from "@/lib/domain/dateUtils"
+import { useFocusedIds, useScrollToFocus } from "@/lib/navigation/FocusProvider"
 import { cn } from "@/lib/utils"
 
 const HORIZONS = [30, 60, 90] as const
@@ -37,6 +38,10 @@ export default function FluxoPage() {
 
   const isLoading =
     loadingAccounts || loadingCards || loadingArchived || loadingInvoices || loadingPending
+
+  // The saldo alert points at the day the projection turns negative.
+  const focusedIds = useFocusedIds()
+  useScrollToFocus(!isLoading)
 
   const flow = useMemo(() => {
     const activeAccountIds = new Set((accounts ?? []).map((a) => a.id))
@@ -122,7 +127,7 @@ export default function FluxoPage() {
         </div>
       )}
 
-      <CashFlowDays flow={flow} days={days} />
+      <CashFlowDays flow={flow} days={days} focusedIds={focusedIds} />
     </div>
   )
 }

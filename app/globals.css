@@ -155,3 +155,28 @@
     @apply font-sans;
   }
 }
+/*
+ * The row an alert pointed at.
+ *
+ * A ring that says "this one" and then gets out of the way: a permanent mark would
+ * still be there next week, claiming an urgency the situation no longer has.
+ */
+@keyframes destacar {
+  from {
+    box-shadow: 0 0 0 2px var(--violeta);
+  }
+  to {
+    box-shadow: 0 0 0 2px transparent;
+  }
+}
+
+.destacado {
+  animation: destacar 4s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .destacado {
+    animation: none;
+    box-shadow: 0 0 0 2px var(--violeta);
+  }
+}

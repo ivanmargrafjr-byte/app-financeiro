@@ -79,7 +79,8 @@ describe("alertsFromCashFlow", () => {
     // Intl pt-BR puts a non-breaking space after "R$", so the expected text is built
     // the same way the alert builds it.
     expect(alert.because).toContain(formatCentsBRL(40000))
-    expect(alert.href).toBe("/fluxo")
+    // Points at the day itself, so /fluxo opens with that day ringed.
+    expect(alert.href).toBe("/fluxo?foco=2026-09-28")
   })
 
   it("says nothing when the balance holds", () => {
@@ -98,16 +99,26 @@ describe("alertsFromCashFlow", () => {
 
 describe("alertsFromBudgets", () => {
   it("separates being over the limit from being ahead of the month", () => {
-    const alerts = alertsFromBudgets([
-      line({ status: "estourado", spentCents: 95000 }),
-      line({ category: { ...category, id: "lazer", name: "Lazer" }, status: "atencao" }),
-      line({ category: { ...category, id: "casa", name: "Casa" }, status: "ok" }),
-    ])
+    const alerts = alertsFromBudgets(
+      [
+        line({ status: "estourado", spentCents: 95000 }),
+        line({ category: { ...category, id: "lazer", name: "Lazer" }, status: "atencao" }),
+        line({ category: { ...category, id: "casa", name: "Casa" }, status: "ok" }),
+      ],
+      "2026-09"
+    )
 
     expect(alerts).toHaveLength(2)
     expect(alerts[0].severity).toBe("critico")
     expect(alerts[0].title).toContain("passou do limite")
     expect(alerts[1].title).toContain("acima do ritmo")
+  })
+
+  it("points at the category whose limit it is talking about, in the month it read", () => {
+    const [alert] = alertsFromBudgets([line({ status: "estourado" })], "2026-09")
+
+    expect(alert.href).toBe(`/orcamentos?foco=${category.id}`)
+    expect(alert.month).toBe("2026-09")
   })
 })
 
@@ -133,6 +144,13 @@ describe("alertsFromGoals", () => {
 
   it("says nothing about one that was reached", () => {
     expect(alertsFromGoals([{ ...goal, savedCents: 120000 }], TODAY)).toEqual([])
+  })
+
+  it("points at the goal, on the month being read rather than the one it was due", () => {
+    const [alert] = alertsFromGoals([goal], TODAY)
+
+    expect(alert.href).toBe("/orcamentos?foco=g1")
+    expect(alert.month).toBe("2026-09")
   })
 })
 
@@ -183,6 +201,10 @@ describe("alertsFromRecurring", () => {
 
     expect(alert.title).toBe("Internet veio maior este mês")
     expect(alert.because).toContain("Confira se houve reajuste")
+    // The entry itself, in the month it was read: /transacoes keeps whichever month the
+    // person last chose, and this one lives in September.
+    expect(alert.href).toBe("/transacoes?foco=atual")
+    expect(alert.month).toBe("2026-09")
   })
 
   it("ignores a difference small enough to be rounding", () => {
@@ -215,6 +237,16 @@ describe("alertsFromDuplicates", () => {
 
     expect(alert.title).toContain("2 lançamentos iguais")
     expect(alert.because).toContain("ou não, e aí basta ignorar")
+  })
+
+  it("points at every entry of the group, not only the first", () => {
+    const [alert] = alertsFromDuplicates([
+      tx({ id: "a", date: "2026-09-12", amountCents: 4500 }),
+      tx({ id: "b", date: "2026-09-12", amountCents: 4500 }),
+    ])
+
+    expect(alert.href).toBe("/transacoes?foco=a&foco=b")
+    expect(alert.month).toBe("2026-09")
   })
 
   it("does not flag instalments of the same purchase", () => {

@@ -17,6 +17,7 @@ import { EntityIcon } from "@/components/forms/EntityIcon"
 import { SettleTransactionDialog } from "@/components/transactions/SettleTransactionDialog"
 import { EditCardTransactionDialog } from "@/components/transactions/EditCardTransactionDialog"
 import { formatCentsBRL } from "@/lib/domain/money"
+import { FOCUS_CLASS, focusAnchorId } from "@/lib/navigation/focus"
 import {
   useDeleteAccountTransaction,
   useDeleteTransfer,
@@ -24,15 +25,19 @@ import {
 } from "@/lib/hooks/useTransactions"
 import { useDeleteRecurringOccurrence } from "@/lib/hooks/useRecurringRules"
 import { useDeleteCardTransaction, useReverseCardSettlement } from "@/lib/hooks/useInvoices"
+import { cn } from "@/lib/utils"
 import type { Transaction } from "@/lib/types"
 
 export function TransactionListItem({
   tx,
   accountName,
+  focused = false,
 }: {
   tx: Transaction
   /** Optional account label; pass when the list mixes transactions from multiple accounts. */
   accountName?: string
+  /** True when an alert pointed at this entry — ringed on arrival. */
+  focused?: boolean
 }) {
   const reverseTransaction = useReverseTransaction()
   const reverseCardSettlement = useReverseCardSettlement()
@@ -113,7 +118,13 @@ export function TransactionListItem({
   }
 
   return (
-    <div className="border-border bg-card flex items-center justify-between gap-2 rounded-md border px-3 py-2">
+    <div
+      id={focusAnchorId(tx.id)}
+      className={cn(
+        "border-border bg-card flex items-center justify-between gap-2 rounded-md border px-3 py-2",
+        focused && FOCUS_CLASS
+      )}
+    >
       <div className="flex min-w-0 items-center gap-3">
         <EntityIcon name={tx.categoryIcon} color={tx.categoryColor} imageUrl={tx.categoryIconUrl} />
         <div className="min-w-0">

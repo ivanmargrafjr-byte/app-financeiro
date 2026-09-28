@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { Suspense, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
 
@@ -9,6 +9,7 @@ import { useUserProfile } from "@/lib/hooks/useUserProfile"
 import { useEnsureTrial } from "@/lib/hooks/useEnsureTrial"
 import { useNow } from "@/lib/hooks/useNow"
 import { MonthProvider } from "@/lib/month/MonthProvider"
+import { FocusProvider } from "@/lib/navigation/FocusProvider"
 import { AppShell } from "@/components/layout/AppShell"
 import { hasAppAccess } from "@/lib/domain/subscriptionAccess"
 
@@ -44,8 +45,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <MonthProvider>
-      <AppShell>{children}</AppShell>
-    </MonthProvider>
+    <Suspense fallback={null}>
+      <FocusProvider>
+        <MonthProvider>
+          <AppShell>{children}</AppShell>
+        </MonthProvider>
+      </FocusProvider>
+    </Suspense>
   )
 }

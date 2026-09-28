@@ -11,11 +11,18 @@
  */
 
 import { formatCentsBRL } from "@/lib/domain/money"
-import { formatDateBR, monthLabel, type DateString } from "@/lib/domain/dateUtils"
+import {
+  formatDateBR,
+  monthLabel,
+  monthOfDate,
+  type DateString,
+  type MonthString,
+} from "@/lib/domain/dateUtils"
 import { goalProgress, type Goal } from "@/lib/domain/goals"
 import type { BudgetLine } from "@/lib/domain/budget"
 import type { CashFlow } from "@/lib/domain/cashFlow"
 import type { ContractAttention } from "@/lib/domain/contractLifecycle"
+import { withFocus } from "@/lib/navigation/focus"
 import type { Transaction } from "@/lib/types"
 
 export type AlertKind = "saldo" | "orcamento" | "meta" | "contrato" | "recorrencia" | "duplicidade"
@@ -29,8 +36,17 @@ export type Alert = {
   title: string
   /** Why the app is saying this — shown under the title, never omitted. */
   because: string
-  /** Where to go to check it. */
+  /**
+   * Where to go to check it, pointing at the row itself — see withFocus. An alert that
+   * lands on the right screen and leaves the person scanning it has only half arrived.
+   */
   href: string
+  /**
+   * The month the destination has to be showing for that row to be there at all. The
+   * screens keep whichever month the person last chose, so a link to a September entry
+   * opened while browsing July would land on a list that does not contain it.
+   */
+  month?: MonthString
   date?: DateString
 }
 
@@ -56,13 +72,13 @@ export function alertsFromCashFlow(flow: CashFlow): Alert[] {
       because: `Somando o que já está registrado até lá, faltam ${formatCentsBRL(
         Math.abs(flow.firstNegative.cents)
       )}.`,
-      href: "/fluxo",
+      href: withFocus("/fluxo", [flow.firstNegative.date]),
       date: flow.firstNegative.date,
     },
   ]
 }
 
-export function alertsFromBudgets(lines: BudgetLine[]): Alert[] {
+export function alertsFromBudgets(lines: BudgetLine[], month: MonthString): Alert[] {
   return lines
     .filter((line) => line.status !== "ok")
     .map((line) => ({
@@ -81,7 +97,8 @@ export function alertsFromBudgets(lines: BudgetLine[]): Alert[] {
           : `Já foram ${formatCentsBRL(line.spentCents)} dos ${formatCentsBRL(
               line.limitCents
             )} do mês, mais rápido do que o mês está passando.`,
-      href: "/orcamentos",
+      href: withFocus("/orcamentos", [line.category.id]),
+      month,
     }))
 }
 
@@ -97,7 +114,8 @@ export function alertsFromGoals(goals: Goal[], today: DateString): Alert[] {
       because: `A data era ${formatDateBR(goal.dueDate)} e ainda faltam ${formatCentsBRL(
         progress.missingCents
       )}.`,
-      href: "/orcamentos",
+      href: withFocus("/orcamentos", [goal.id]),
+      month: monthOfDate(today),
       date: goal.dueDate,
     }))
 }
@@ -154,7 +172,8 @@ export function alertsFromRecurring(
         because: `Era ${formatCentsBRL(previous.amountCents)} e veio ${formatCentsBRL(
           t.amountCents
         )} em ${monthLabel(month).toLowerCase()}. Confira se houve reajuste.`,
-        href: "/transacoes",
+        href: withFocus("/transacoes", [t.id]),
+        month,
         date: t.date,
       },
     ]
@@ -187,7 +206,11 @@ export function alertsFromDuplicates(transactions: Transaction[]): Alert[] {
       because: `${group[0].description} · ${formatCentsBRL(
         group[0].amountCents
       )}, na mesma categoria e no mesmo dia. Pode ser duplicidade — ou não, e aí basta ignorar.`,
-      href: "/transacoes",
+      href: withFocus(
+        "/transacoes",
+        group.map((t) => t.id)
+      ),
+      month: monthOfDate(group[0].date),
       date: group[0].date,
     }))
 }

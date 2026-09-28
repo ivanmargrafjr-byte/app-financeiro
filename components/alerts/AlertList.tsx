@@ -1,12 +1,19 @@
+"use client"
+
 import Link from "next/link"
 import { AlertTriangle, ChevronRight, Info, X } from "lucide-react"
 
+import { useMonth } from "@/lib/month/MonthProvider"
 import { cn } from "@/lib/utils"
 import type { Alert } from "@/lib/domain/alerts"
 
 /**
  * Every alert shows what it noticed and why it thinks so, and goes somewhere the
  * user can check it. An alert that cannot be verified is just noise with an icon.
+ *
+ * "Somewhere" means the row itself: the link carries the month the alert is about and
+ * the id of what it saw, so the destination opens on that month with that row ringed
+ * instead of on whatever month was last being browsed.
  */
 export function AlertList({
   alerts,
@@ -18,6 +25,8 @@ export function AlertList({
   /** Offered only where dismissing makes sense — see the duplicates alert. */
   onDismiss?: (alert: Alert) => void
 }) {
+  const { setMonth } = useMonth()
+
   if (alerts.length === 0) {
     return <p className="text-muted-foreground text-sm">{emptyLabel}</p>
   }
@@ -40,6 +49,9 @@ export function AlertList({
             )}
             <Link
               href={alert.href}
+              onClick={() => {
+                if (alert.month) setMonth(alert.month)
+              }}
               className="border-border bg-card hover:bg-accent flex items-start justify-between gap-2 rounded-lg border px-3 py-2.5"
             >
               <span className="flex min-w-0 items-start gap-2">

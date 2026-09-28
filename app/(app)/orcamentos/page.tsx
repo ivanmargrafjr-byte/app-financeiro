@@ -34,6 +34,7 @@ import {
   type GoalInput,
 } from "@/lib/hooks/useGoals"
 import { useMonth } from "@/lib/month/MonthProvider"
+import { useFocusedIds, useScrollToFocus } from "@/lib/navigation/FocusProvider"
 import { buildBudgetLines, sumBudgets } from "@/lib/domain/budget"
 import { sumMonthly, sumSaved, type Goal, type GoalKind } from "@/lib/domain/goals"
 import { monthLabel, todayDateString } from "@/lib/domain/dateUtils"
@@ -63,6 +64,10 @@ export default function OrcamentosPage() {
   const [picking, setPicking] = useState(false)
 
   const isLoading = loadingCategories || loadingTransactions || loadingBudgets
+
+  // An alert can land here pointing at one category's limit or at one goal.
+  const focusedIds = useFocusedIds()
+  useScrollToFocus(!isLoading && goals != null)
 
   const lines = useMemo(
     () =>
@@ -176,6 +181,7 @@ export default function OrcamentosPage() {
 
           <BudgetLines
             lines={lines}
+            focusedIds={focusedIds}
             action={(line) => (
               <button
                 type="button"
@@ -201,6 +207,7 @@ export default function OrcamentosPage() {
         <GoalList
           goals={metas}
           today={today}
+          focusedIds={focusedIds}
           emptyLabel="Nenhuma meta ainda. Diga quanto quer juntar e até quando, e o app calcula o quanto guardar por mês."
           action={(goal) => (
             <span className="flex items-center gap-1.5">
@@ -236,6 +243,7 @@ export default function OrcamentosPage() {
         <GoalList
           goals={anuais}
           today={today}
+          focusedIds={focusedIds}
           emptyLabel="Seguro, IPVA, matrícula: cadastre o valor e a data, e o app mostra quanto separar por mês para não ser pego de surpresa."
           action={(goal) => (
             <span className="flex items-center gap-1.5">

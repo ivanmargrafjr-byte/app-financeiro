@@ -2,6 +2,7 @@ import { Amount } from "@/components/home/Amount"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { formatDateBR } from "@/lib/domain/dateUtils"
 import { goalProgress, type Goal } from "@/lib/domain/goals"
+import { FOCUS_CLASS, focusAnchorId } from "@/lib/navigation/focus"
 import { cn } from "@/lib/utils"
 
 /**
@@ -15,12 +16,15 @@ export function GoalList({
   today,
   hidden = false,
   emptyLabel,
+  focusedIds,
   action,
 }: {
   goals: Goal[]
   today: string
   hidden?: boolean
   emptyLabel: string
+  /** Goals an alert is pointing at — ringed on arrival. */
+  focusedIds?: ReadonlySet<string>
   action?: (goal: Goal) => React.ReactNode
 }) {
   if (goals.length === 0) {
@@ -34,7 +38,11 @@ export function GoalList({
         return (
           <li
             key={goal.id}
-            className="border-border bg-card grid gap-1.5 rounded-lg border px-3 py-2.5"
+            id={focusAnchorId(goal.id)}
+            className={cn(
+              "border-border bg-card grid gap-1.5 rounded-lg border px-3 py-2.5",
+              focusedIds?.has(goal.id) && FOCUS_CLASS
+            )}
           >
             <div className="flex items-center justify-between gap-2">
               <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium">

@@ -2,7 +2,9 @@ import { Amount } from "@/components/home/Amount"
 import { EntityIcon } from "@/components/forms/EntityIcon"
 import { dayMonthParts } from "@/lib/domain/dateUtils"
 import { daysWithMovement, type CashFlow } from "@/lib/domain/cashFlow"
+import { FOCUS_CLASS, focusAnchorId } from "@/lib/navigation/focus"
 import { DEFAULT_CATEGORY_COLOR } from "@/lib/types"
+import { cn } from "@/lib/utils"
 
 /**
  * The days that have something happening, with the balance each one ends at.
@@ -14,10 +16,13 @@ export function CashFlowDays({
   flow,
   days,
   hidden = false,
+  focusedIds,
 }: {
   flow: CashFlow
   days: number
   hidden?: boolean
+  /** Days an alert is pointing at — ringed on arrival. */
+  focusedIds?: ReadonlySet<string>
 }) {
   const movement = daysWithMovement(flow)
 
@@ -34,7 +39,11 @@ export function CashFlowDays({
         return (
           <li
             key={day.date}
-            className="border-border bg-card grid gap-2 rounded-lg border px-3 py-2.5"
+            id={focusAnchorId(day.date)}
+            className={cn(
+              "border-border bg-card grid gap-2 rounded-lg border px-3 py-2.5",
+              focusedIds?.has(day.date) && FOCUS_CLASS
+            )}
           >
             <div className="flex items-center justify-between gap-2">
               <span className="flex items-baseline gap-1.5 text-sm font-semibold">
