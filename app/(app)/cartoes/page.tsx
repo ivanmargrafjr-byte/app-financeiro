@@ -46,8 +46,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export default function CartoesPage() {
-  const { data: cards, isLoading } = useCards()
-  const { data: archivedCards } = useArchivedCards()
+  const { data: cards, isLoading: loadingCards } = useCards()
+  // Gates the panels below as well: without the archived cards their cutoff cannot be
+  // applied, and a replaced card's invoices would be counted for a beat as if owed.
+  const { data: archivedCards, isLoading: loadingArchived } = useArchivedCards()
+  const isLoading = loadingCards || loadingArchived
   const createCard = useCreateCard()
   const updateCard = useUpdateCard()
   const setCardArchived = useSetCardArchived()

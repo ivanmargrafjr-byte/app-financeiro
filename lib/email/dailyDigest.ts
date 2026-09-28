@@ -2,6 +2,7 @@ import "server-only"
 
 import { adminDb } from "@/lib/firebaseAdmin/client"
 import { resend } from "@/lib/email/resendClient"
+import { cardCountsInMonth } from "@/lib/domain/cardCutoff"
 import { formatCentsBRL } from "@/lib/domain/money"
 import { todayDateString } from "@/lib/domain/dateUtils"
 
@@ -123,8 +124,24 @@ export async function sendDailyDigest(): Promise<{ sent: boolean; pendingCount: 
     for (const doc of invoicesSnap.docs) {
       const data = doc.data()
       const cardSnap = await userRef.collection("cards").doc(data.cardId as string).get()
+      const card = cardSnap.data()
+      // A card that was replaced keeps its old invoices, but from the cutoff month on
+      // they are a stale copy of what the replacement carries. Every screen applies
+      // this rule; the e-mail did not, so it announced a bill the app itself had
+      // stopped showing — and the person went looking for it.
+      const counts = cardCountsInMonth(
+        card
+          ? {
+              archived: (card.archived as boolean | undefined) ?? false,
+              archivedFromMonth: card.archivedFromMonth as string | undefined,
+            }
+          : undefined,
+        data.referenceMonth as string
+      )
+      if (!counts) continue
+
       dueInvoices.push({
-        cardName: (cardSnap.data()?.name as string | undefined) ?? "Cartão",
+        cardName: (card?.name as string | undefined) ?? "Cartão",
         amountCents: data.totalAmountCents as number,
       })
     }

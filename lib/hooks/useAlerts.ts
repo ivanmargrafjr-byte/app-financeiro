@@ -46,8 +46,8 @@ export function useAlerts(): {
 
   const { data: profile } = useUserProfile()
   const { data: accounts, isLoading: loadingAccounts } = useAccounts()
-  const { data: cards } = useCards()
-  const { data: archivedCards } = useArchivedCards()
+  const { data: cards, isLoading: loadingCards } = useCards()
+  const { data: archivedCards, isLoading: loadingArchived } = useArchivedCards()
   const { data: categories } = useCategories()
   const { data: openInvoices, isLoading: loadingInvoices } = useOpenInvoices()
   const { data: pending, isLoading: loadingPending } = usePendingTransactions()
@@ -59,7 +59,19 @@ export function useAlerts(): {
   const muted = (profile?.mutedAlertKinds ?? []) as AlertKind[]
   const dismissed = profile?.dismissedDuplicateIds ?? []
 
+  // Nothing is judged until the archived cards are in hand. Until then their cutoff
+  // cannot be applied, and a replaced card's invoices count as if they were still
+  // owed — which showed up as alerts about cards the person had already archived.
+  const isLoading =
+    loadingAccounts ||
+    loadingInvoices ||
+    loadingPending ||
+    loadingMonths ||
+    loadingCards ||
+    loadingArchived
+
   const alerts = useMemo(() => {
+    if (isLoading) return []
     const byMonth = new Map((monthsData ?? []).map((bucket) => [bucket.month, bucket.transactions]))
     const archivedById = new Map((archivedCards ?? []).map((c) => [c.id, c]))
     const cardsById = new Map([...(cards ?? []), ...(archivedCards ?? [])].map((c) => [c.id, c]))
@@ -112,12 +124,8 @@ export function useAlerts(): {
     today,
     muted,
     dismissed,
+    isLoading,
   ])
 
-  return {
-    alerts,
-    isLoading: loadingAccounts || loadingInvoices || loadingPending || loadingMonths,
-    muted,
-    dismissed,
-  }
+  return { alerts, isLoading, muted, dismissed }
 }
