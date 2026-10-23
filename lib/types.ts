@@ -195,6 +195,34 @@ export type Contract = {
   updatedAt: number
 }
 
+export type FiscalNote = {
+  id: string
+  /** NF-e (mercadorias), NFS-e (serviços) or anything else fiscal. */
+  kind: "produto" | "servico" | "outra"
+  number: string
+  series: string | null
+  /** 44 digits, digits only — present on NF-e. */
+  accessKey: string | null
+  /** Who issued the note and gets paid. */
+  issuer: string
+  issuerDocument: string | null
+  /** Who bought or hired — the one the note is charged to. */
+  recipient: string | null
+  recipientDocument: string | null
+  description: string
+  issueDate: DateString
+  dueDate: DateString | null
+  valueCents: number
+  taxCents: number | null
+  notes: string | null
+  fileName: string | null
+  fileUrl: string | null
+  fileStoragePath: string | null
+  archived: boolean
+  createdAt: number
+  updatedAt: number
+}
+
 export type SubscriptionStatus =
   | "exempt"
   /** The card-less 7-day trial granted at signup — bounded by `trialEndsAt`. */

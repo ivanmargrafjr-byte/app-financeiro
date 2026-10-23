@@ -78,3 +78,13 @@ export function contractDocRef(uid: string, contractId: string) {
 export function contractFileStoragePath(uid: string, contractId: string, fileName: string) {
   return `users/${uid}/contracts/${contractId}/${fileName}`
 }
+
+export function fiscalNotesCol(uid: string) {
+  return collection(db, "users", uid, "fiscalNotes")
+}
+export function fiscalNoteDocRef(uid: string, noteId: string) {
+  return doc(db, "users", uid, "fiscalNotes", noteId)
+}
+export function fiscalNoteFileStoragePath(uid: string, noteId: string, fileName: string) {
+  return `users/${uid}/fiscalNotes/${noteId}/${fileName}`
+}

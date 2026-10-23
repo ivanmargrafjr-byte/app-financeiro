@@ -123,6 +123,9 @@ service cloud.firestore {
       match /contracts/{contractId} {
         allow read, write: if isOwner(userId);
       }
+      match /fiscalNotes/{noteId} {
+        allow read, write: if isOwner(userId);
+      }
     }
   }
 }

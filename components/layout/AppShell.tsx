@@ -12,6 +12,7 @@ import {
   LineChart,
   ListTree,
   PiggyBank,
+  Receipt,
   LogOut,
   Repeat,
   Shield,
@@ -44,6 +45,7 @@ const NAV_ITEMS = [
   { href: "/orcamentos", label: "Orçamentos", icon: PiggyBank },
   { href: "/categorias", label: "Categorias", icon: Tag },
   { href: "/contratos", label: "Contratos", icon: FileText },
+  { href: "/notas-fiscais", label: "Notas fiscais", icon: Receipt },
   { href: "/compartilhado", label: "Compartilhado", icon: Users },
   { href: "/conta", label: "Conta", icon: User },
 ]
