@@ -6,6 +6,7 @@ import { ArrowLeftRight, Plus } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -157,7 +158,7 @@ export default function TransacoesPage() {
   return (
     <div className="grid grid-cols-1 gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Transações</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Transações</h1>
         <div className="flex gap-2">
           <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
             <Button variant="outline" onClick={() => setTransferOpen(true)}>
@@ -276,9 +277,7 @@ export default function TransacoesPage() {
       )}
 
       {!isLoading && visibleTx.length === 0 && (
-        <p className="text-muted-foreground text-sm">
-          Nenhum lançamento neste mês ainda.
-        </p>
+        <EmptyState title="Nenhum lançamento neste mês ainda" />
       )}
 
       <div className="grid grid-cols-1 gap-2">

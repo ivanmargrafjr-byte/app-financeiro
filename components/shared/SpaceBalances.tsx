@@ -48,7 +48,7 @@ export function SpaceBalances({
                 className={cn(
                   "flex shrink-0 items-center gap-1 text-xs",
                   balance.cents > 0
-                    ? "text-emerald-600 dark:text-emerald-400"
+                    ? "text-emerald-700 dark:text-emerald-400"
                     : balance.cents < 0
                       ? "text-destructive"
                       : "text-muted-foreground"

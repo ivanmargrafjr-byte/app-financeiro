@@ -169,12 +169,12 @@ export function TransactionListItem({
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {settled && (
-          <CheckCircle2 className="text-emerald-600 size-4" aria-label="Efetivada" />
+          <CheckCircle2 className="text-emerald-700 size-4" aria-label="Efetivada" />
         )}
         <span
           className={
             "text-sm font-medium " +
-            (tx.direction === "in" ? "text-emerald-600" : "text-foreground")
+            (tx.direction === "in" ? "text-emerald-700" : "text-foreground")
           }
         >
           {tx.direction === "in" ? "+" : "-"}

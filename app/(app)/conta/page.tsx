@@ -16,7 +16,7 @@ export default function ContaPage() {
 
   return (
     <div className="grid max-w-sm gap-4">
-      <h1 className="text-xl font-semibold">Conta</h1>
+      <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Conta</h1>
 
       <Card>
         <CardHeader>

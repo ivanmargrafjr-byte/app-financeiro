@@ -67,7 +67,7 @@ export function AdjustBalanceForm({
           <p className="text-muted-foreground text-xs">
             Isso vai lançar um ajuste de{" "}
             <span
-              className={deltaCents > 0 ? "text-emerald-600 font-medium" : "text-foreground font-medium"}
+              className={deltaCents > 0 ? "text-emerald-700 font-medium" : "text-foreground font-medium"}
             >
               {deltaCents > 0 ? "+" : "-"}
               {formatCentsBRL(Math.abs(deltaCents))}

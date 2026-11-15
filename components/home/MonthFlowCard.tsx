@@ -41,14 +41,14 @@ export function MonthFlowCard({
         <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
           <div className="bg-muted grid min-w-0 gap-0.5 overflow-hidden rounded-lg p-3">
             <span className="text-muted-foreground flex items-center gap-1 text-xs">
-              <ArrowDownLeft className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+              <ArrowDownLeft className="size-3.5 text-emerald-700 dark:text-emerald-400" />
               Entradas
             </span>
             <Amount
               cents={receitasCents}
               hidden={hidden}
               size="md"
-              className="text-emerald-600 dark:text-emerald-400"
+              className="text-emerald-700 dark:text-emerald-400"
             />
           </div>
           <div className="bg-muted grid min-w-0 gap-0.5 overflow-hidden rounded-lg p-3">

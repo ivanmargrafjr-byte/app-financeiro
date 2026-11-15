@@ -178,7 +178,7 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold text-emerald-600">
+            <p className="text-2xl font-semibold text-emerald-700">
               {formatCentsBRL(summary.receitasCents)}
             </p>
           </CardContent>
@@ -203,7 +203,7 @@ export default function DashboardPage() {
             <p
               className={
                 "text-2xl font-semibold " +
-                (summary.saldoCents >= 0 ? "text-emerald-600" : "text-destructive")
+                (summary.saldoCents >= 0 ? "text-emerald-700" : "text-destructive")
               }
             >
               {formatCentsBRL(summary.saldoCents)}

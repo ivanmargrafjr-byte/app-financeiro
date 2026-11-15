@@ -33,7 +33,7 @@ export default function AlertasPage() {
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Alertas</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Alertas</h1>
         <Button variant="outline" size="sm" onClick={() => setShowSettings((v) => !v)}>
           <Settings2 className="size-4" />
           O que avisar

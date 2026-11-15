@@ -64,7 +64,7 @@ export default function CardDetailPage({
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="flex items-center gap-2 text-xl font-semibold">
+          <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight md:text-2xl">
             {card && <EntityIcon name={card.icon} color={card.color} imageUrl={card.iconUrl} />}
             {card?.name ?? "Cartão"}
           </h1>

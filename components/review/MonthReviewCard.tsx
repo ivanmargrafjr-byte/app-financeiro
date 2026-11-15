@@ -15,7 +15,7 @@ function Delta({ cents, invert = false }: { cents: number; invert?: boolean }) {
     <span
       className={cn(
         "flex items-center gap-0.5 text-xs",
-        good ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"
+        good ? "text-emerald-700 dark:text-emerald-400" : "text-destructive"
       )}
     >
       <Icon className="size-3.5" />

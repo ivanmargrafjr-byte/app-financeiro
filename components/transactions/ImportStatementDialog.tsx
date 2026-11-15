@@ -326,7 +326,7 @@ export function ImportStatementDialog({
                     <TableCell
                       className={cn(
                         "text-right whitespace-nowrap tabular-nums",
-                        row.direction === "in" ? "text-emerald-600" : undefined
+                        row.direction === "in" ? "text-emerald-700" : undefined
                       )}
                     >
                       {row.direction === "out" ? "−" : "+"}

@@ -136,7 +136,7 @@ export default function InvoiceDetailPage({
       {invoice && (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h1 className="flex items-center gap-2 text-xl font-semibold capitalize">
+            <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight md:text-2xl capitalize">
               {card && <EntityIcon name={card.icon} color={card.color} imageUrl={card.iconUrl} />}
               {monthLabel(monthOfDate(invoice.dueDate))}
             </h1>

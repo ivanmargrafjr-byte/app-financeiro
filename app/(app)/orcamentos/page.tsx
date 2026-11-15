@@ -133,7 +133,7 @@ export default function OrcamentosPage() {
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Orçamentos</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Orçamentos</h1>
         <Button onClick={() => setPicking(true)} disabled={withoutBudget.length === 0}>
           <Plus className="size-4" />
           Novo limite

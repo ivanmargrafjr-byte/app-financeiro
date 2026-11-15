@@ -74,7 +74,7 @@ export default function FluxoPage() {
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Fluxo de caixa</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Fluxo de caixa</h1>
         <div className="flex items-center gap-2">
           <div className="bg-muted flex rounded-lg p-0.5">
             {HORIZONS.map((horizon) => (

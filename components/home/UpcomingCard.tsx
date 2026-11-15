@@ -78,7 +78,7 @@ export function UpcomingCard({
                   className={cn(
                     "shrink-0",
                     item.direction === "in"
-                      ? "text-emerald-600 dark:text-emerald-400"
+                      ? "text-emerald-700 dark:text-emerald-400"
                       : "text-destructive"
                   )}
                 />

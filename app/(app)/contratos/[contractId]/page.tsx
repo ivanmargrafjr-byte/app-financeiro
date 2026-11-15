@@ -91,7 +91,7 @@ export default function ContractDetailPage({
       {contract && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h1 className="text-xl font-semibold">Contrato {contract.number}</h1>
+            <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Contrato {contract.number}</h1>
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={

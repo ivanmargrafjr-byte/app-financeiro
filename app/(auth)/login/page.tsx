@@ -102,7 +102,7 @@ export default function LoginPage() {
               <div className="-mt-2 flex justify-end">
                 <Link
                   href="/recuperar-senha"
-                  className="text-muted-foreground text-sm underline underline-offset-4"
+                  className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4 transition-colors"
                 >
                   Esqueci minha senha
                 </Link>
@@ -114,7 +114,7 @@ export default function LoginPage() {
           </Form>
           <p className="text-muted-foreground mt-4 text-center text-sm">
             Não tem conta?{" "}
-            <Link href="/signup" className="text-foreground underline underline-offset-4">
+            <Link href="/signup" className="text-foreground hover:text-primary font-medium underline underline-offset-4 transition-colors">
               Cadastre-se
             </Link>
           </p>

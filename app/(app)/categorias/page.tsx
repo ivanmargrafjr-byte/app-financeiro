@@ -169,7 +169,7 @@ export default function CategoriasPage() {
   return (
     <div className="grid grid-cols-1 gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Categorias</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Categorias</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <Button onClick={() => setOpen(true)}>
             <Plus className="size-4" />
@@ -223,7 +223,7 @@ export default function CategoriasPage() {
       )}
 
       {!isLoading && (
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className="grid items-start gap-6 sm:grid-cols-2">
           <CategoryGroup
             type="despesa"
             title="Despesas"

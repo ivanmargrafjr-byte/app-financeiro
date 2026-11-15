@@ -85,14 +85,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         Pular para o conteúdo
       </a>
       <aside className="border-border flex shrink-0 flex-col border-b p-4 md:sticky md:top-0 md:h-dvh md:w-56 md:self-start md:overflow-y-auto md:border-b-0 md:border-r">
-        <div className="mb-6 flex items-center gap-2 px-2 text-lg font-semibold">
+        <div className="mb-6 flex items-center gap-2 px-2 text-lg font-semibold tracking-tight">
           <Image src="/logo-folego.png" alt="" width={28} height={28} priority />
           <span translate="no">Fôlego</span>
         </div>
         <nav
           ref={navRef}
           aria-label="Principal"
-          className="flex flex-1 flex-row gap-1 overflow-x-auto md:flex-col md:overflow-visible"
+          className="flex flex-1 flex-row gap-1 overflow-x-auto [scrollbar-width:none] md:flex-col md:overflow-visible"
         >
           {navItems.map((item) => {
             const active = isWithinRoute(pathname, item.href)
@@ -103,13 +103,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "focus-visible:ring-ring flex items-center gap-2 rounded-md px-3 py-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset",
+                  "focus-visible:ring-ring flex items-center gap-2.5 rounded-md px-3 py-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset",
                   active
                     ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    : "text-muted-foreground hover:bg-muted-strong hover:text-foreground"
                 )}
               >
-                <Icon className="size-4" />
+                <Icon className="size-4 shrink-0" />
                 {item.label}
               </Link>
             )
@@ -132,7 +132,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             band on a desktop screen — so it goes away there entirely. */}
         <header
           className={cn(
-            "border-border flex flex-wrap items-center gap-2 border-b p-4",
+            "border-border flex flex-wrap items-center gap-2 border-b px-4 py-3 md:px-6",
             showsMonth ? "justify-between" : "justify-end md:hidden"
           )}
         >
@@ -147,7 +147,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <LogOut className="size-4" />
           </Button>
         </header>
-        <main id="conteudo" tabIndex={-1} className="min-w-0 flex-1 p-4 outline-none">
+        <main id="conteudo" tabIndex={-1} className="min-w-0 flex-1 p-4 outline-none md:p-6">
           {children}
         </main>
       </div>

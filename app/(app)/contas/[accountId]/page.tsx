@@ -71,7 +71,7 @@ export default function AccountDetailPage({
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="flex items-center gap-2 text-xl font-semibold">
+          <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight md:text-2xl">
             {account && (
               <EntityIcon name={account.icon} color={account.color} imageUrl={account.iconUrl} />
             )}

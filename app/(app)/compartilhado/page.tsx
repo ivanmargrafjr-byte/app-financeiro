@@ -91,7 +91,7 @@ export default function CompartilhadoPage() {
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Compartilhado</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Compartilhado</h1>
         {space ? (
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setInviting(true)}>

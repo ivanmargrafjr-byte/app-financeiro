@@ -13,7 +13,7 @@ export function TrialBanner({ daysLeft }: { daysLeft: number }) {
       href="/assinatura"
       className="flex items-center gap-3 rounded-xl border border-amber-300/60 bg-amber-50 px-4 py-3 transition-colors hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:hover:bg-amber-500/15"
     >
-      <Sparkles className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
+      <Sparkles className="size-5 shrink-0 text-amber-700 dark:text-amber-400" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium">
           Teste grátis ·{" "}

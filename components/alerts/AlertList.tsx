@@ -1,5 +1,6 @@
 "use client"
 
+import { EmptyState } from "@/components/ui/empty-state"
 import Link from "next/link"
 import { AlertTriangle, ChevronRight, Info, X } from "lucide-react"
 
@@ -28,7 +29,8 @@ export function AlertList({
   const { setMonth } = useMonth()
 
   if (alerts.length === 0) {
-    return <p className="text-muted-foreground text-sm">{emptyLabel}</p>
+    const [title, ...rest] = emptyLabel.split(". ")
+    return <EmptyState title={title.replace(/\.$/, "")}>{rest.join(". ")}</EmptyState>
   }
 
   return (

@@ -81,7 +81,7 @@ export function BudgetLines({
                 line.status === "estourado"
                   ? "text-destructive"
                   : line.status === "atencao"
-                    ? "text-amber-600 dark:text-amber-400"
+                    ? "text-amber-700 dark:text-amber-400"
                     : "text-muted-foreground"
               )}
             >

@@ -6,6 +6,7 @@ import { MoreVertical, Plus } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
@@ -126,7 +127,7 @@ export default function CartoesPage() {
   return (
     <div className="grid grid-cols-1 gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Cartões</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Cartões</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <Button onClick={() => setOpen(true)}>
             <Plus className="size-4" />
@@ -179,9 +180,7 @@ export default function CartoesPage() {
       )}
 
       {!isLoading && cards?.length === 0 && (
-        <p className="text-muted-foreground text-sm">
-          Nenhum cartão cadastrado ainda.
-        </p>
+        <EmptyState title="Nenhum cartão cadastrado ainda" />
       )}
 
       {!isLoading && !!cards?.length && (

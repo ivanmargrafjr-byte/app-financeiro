@@ -5,6 +5,7 @@ import { MoreVertical, Plus } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -76,7 +77,7 @@ export default function RecorrentesPage() {
   return (
     <div className="grid grid-cols-1 gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Recorrências</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Recorrências</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <Button onClick={() => setOpen(true)}>
             <Plus className="size-4" />
@@ -129,9 +130,9 @@ export default function RecorrentesPage() {
       )}
 
       {!isLoading && rules?.length === 0 && (
-        <p className="text-muted-foreground text-sm">
-          Nenhuma recorrência cadastrada ainda. Crie uma para assinaturas, salário e outros lançamentos mensais.
-        </p>
+        <EmptyState title="Nenhuma recorrência cadastrada ainda">
+          Crie uma para assinaturas, salário e outros lançamentos mensais.
+        </EmptyState>
       )}
 
       <div className="grid grid-cols-1 gap-2">
@@ -162,7 +163,7 @@ export default function RecorrentesPage() {
                 <span
                   className={
                     "text-sm font-medium " +
-                    (rule.direction === "in" ? "text-emerald-600" : "text-foreground")
+                    (rule.direction === "in" ? "text-emerald-700" : "text-foreground")
                   }
                 >
                   {rule.direction === "in" ? "+" : "-"}

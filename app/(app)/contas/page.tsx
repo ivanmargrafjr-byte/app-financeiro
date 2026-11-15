@@ -6,6 +6,7 @@ import { ArrowLeftRight, MoreVertical, Plus } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
@@ -100,7 +101,7 @@ export default function ContasPage() {
   return (
     <div className="grid grid-cols-1 gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Contas</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Contas</h1>
         <div className="flex gap-2">
           <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
             <Button variant="outline" onClick={() => setTransferOpen(true)}>
@@ -168,9 +169,9 @@ export default function ContasPage() {
       )}
 
       {!isLoading && accounts?.length === 0 && (
-        <p className="text-muted-foreground text-sm">
-          Nenhuma conta cadastrada ainda. Crie a primeira para começar a lançar receitas e despesas.
-        </p>
+        <EmptyState title="Nenhuma conta cadastrada ainda">
+          Crie a primeira para começar a lançar receitas e despesas.
+        </EmptyState>
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

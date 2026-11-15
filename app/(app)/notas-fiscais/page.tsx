@@ -6,6 +6,7 @@ import { Plus, Receipt } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
@@ -41,7 +42,7 @@ export default function NotasFiscaisPage() {
   return (
     <div className="grid grid-cols-1 gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Notas fiscais</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Notas fiscais</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <Button onClick={() => setOpen(true)}>
             <Plus className="size-4" />
@@ -69,9 +70,9 @@ export default function NotasFiscaisPage() {
       )}
 
       {!isLoading && notes?.length === 0 && (
-        <p className="text-muted-foreground text-sm">
-          Nenhuma nota fiscal cadastrada ainda. Envie o PDF ou uma foto da primeira e o app lê os dados para você.
-        </p>
+        <EmptyState title="Nenhuma nota fiscal cadastrada ainda">
+          Envie o PDF ou uma foto da primeira e o app lê os dados para você.
+        </EmptyState>
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

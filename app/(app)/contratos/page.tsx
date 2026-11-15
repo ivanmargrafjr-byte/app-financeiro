@@ -6,6 +6,7 @@ import { FileText, Plus } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
@@ -50,7 +51,7 @@ export default function ContratosPage() {
   return (
     <div className="grid grid-cols-1 gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Contratos</h1>
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">Contratos</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <Button onClick={() => setOpen(true)}>
             <Plus className="size-4" />
@@ -78,9 +79,9 @@ export default function ContratosPage() {
       )}
 
       {!isLoading && contracts?.length === 0 && (
-        <p className="text-muted-foreground text-sm">
-          Nenhum contrato cadastrado ainda. Cadastre o primeiro para começar a acompanhar vigências e pagamentos.
-        </p>
+        <EmptyState title="Nenhum contrato cadastrado ainda">
+          Cadastre o primeiro para começar a acompanhar vigências e pagamentos.
+        </EmptyState>
       )}
 
       {!isLoading && attention.length > 0 && (

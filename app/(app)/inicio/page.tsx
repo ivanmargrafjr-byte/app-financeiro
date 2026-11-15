@@ -188,7 +188,7 @@ export default function InicioPage() {
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-3">
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">
           {hello}
           {firstName ? `, ${firstName}` : ""}
         </h1>
