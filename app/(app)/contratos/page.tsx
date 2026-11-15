@@ -7,6 +7,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { ErrorState } from "@/components/ui/error-state"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
@@ -28,7 +29,7 @@ function formatBrDate(date: string) {
 }
 
 export default function ContratosPage() {
-  const { data: contracts, isLoading } = useContracts()
+  const { data: contracts, isLoading, isError, refetch } = useContracts()
   const createContract = useCreateContract()
   const [today] = useState(() => todayDateString())
   const attention = contractsNeedingAttention(contracts ?? [], today)
@@ -78,7 +79,9 @@ export default function ContratosPage() {
         </div>
       )}
 
-      {!isLoading && contracts?.length === 0 && (
+      {isError && <ErrorState onRetry={() => refetch()} />}
+
+      {!isLoading && !isError && contracts?.length === 0 && (
         <EmptyState title="Nenhum contrato cadastrado ainda">
           Cadastre o primeiro para começar a acompanhar vigências e pagamentos.
         </EmptyState>

@@ -7,6 +7,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { ErrorState } from "@/components/ui/error-state"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
@@ -38,7 +39,7 @@ import { useCreateTransfer } from "@/lib/hooks/useTransactions"
 import type { TransferFormValues } from "@/lib/validators/transfer"
 
 export default function ContasPage() {
-  const { data: accounts, isLoading } = useAccounts()
+  const { data: accounts, isLoading, isError, refetch } = useAccounts()
   const { data: archivedAccounts } = useArchivedAccounts()
   const createAccount = useCreateAccount()
   const updateAccount = useUpdateAccount()
@@ -168,7 +169,9 @@ export default function ContasPage() {
         </div>
       )}
 
-      {!isLoading && accounts?.length === 0 && (
+      {isError && <ErrorState onRetry={() => refetch()} />}
+
+      {!isLoading && !isError && accounts?.length === 0 && (
         <EmptyState title="Nenhuma conta cadastrada ainda">
           Crie a primeira para começar a lançar receitas e despesas.
         </EmptyState>

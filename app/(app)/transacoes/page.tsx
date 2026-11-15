@@ -7,6 +7,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { ErrorState } from "@/components/ui/error-state"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -15,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { TransactionForm } from "@/components/forms/TransactionForm"
 import { TransferForm } from "@/components/forms/TransferForm"
@@ -41,9 +43,11 @@ import { useFocusedIds, useScrollToFocus } from "@/lib/navigation/FocusProvider"
 import type { AccountTransactionFormValues } from "@/lib/validators/transaction"
 import type { TransferFormValues } from "@/lib/validators/transfer"
 
+const PAGE_SIZE = 50
+
 export default function TransacoesPage() {
   const { month } = useMonth()
-  const { data: transactions, isLoading } = useMonthTransactions(month)
+  const { data: transactions, isLoading, isError, refetch } = useMonthTransactions(month)
   const { data: accounts } = useAccounts()
   const { data: cards } = useCards()
   const { data: archivedCards } = useArchivedCards()
@@ -131,7 +135,24 @@ export default function TransacoesPage() {
   // Card purchases are represented consolidated in the "Faturas do mês" card above —
   // showing every individual purchase here too would duplicate that (and get noisy
   // fast once imported faturas add many line items). Click into a fatura to see them.
-  const visibleTx = allTx.filter((t) => t.origin !== "card")
+  const monthTx = allTx.filter((t) => t.origin !== "card")
+
+  // Search within the month, and show the list in pages so a month with hundreds of
+  // entries doesn't render (and scroll) all at once. The page count resets whenever
+  // the search or the month changes.
+  const [search, setSearch] = useState("")
+  const term = search.trim().toLocaleLowerCase("pt-BR")
+  const visibleTx = term
+    ? monthTx.filter(
+        (t) =>
+          t.description.toLocaleLowerCase("pt-BR").includes(term) ||
+          (t.categoryName ?? "").toLocaleLowerCase("pt-BR").includes(term)
+      )
+    : monthTx
+  const limitKey = `${month}|${term}`
+  const [limitState, setLimitState] = useState({ key: limitKey, count: PAGE_SIZE })
+  const limit = limitState.key === limitKey ? limitState.count : PAGE_SIZE
+  const shownTx = visibleTx.slice(0, limit)
 
   // Deliberately not built from the month's transactions like the list below: a
   // pendência from an earlier month is still owed, and scoping the estimate to the
@@ -276,12 +297,38 @@ export default function TransacoesPage() {
         </div>
       )}
 
-      {!isLoading && visibleTx.length === 0 && (
+      {isError && <ErrorState onRetry={() => refetch()} />}
+
+      {!isLoading && !isError && monthTx.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <Input
+            type="search"
+            aria-label="Buscar lançamento por descrição ou categoria"
+            placeholder="Buscar por descrição ou categoria"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-10 max-w-sm"
+          />
+          {term && (
+            <p className="text-muted-foreground text-sm" role="status" aria-live="polite">
+              {visibleTx.length} de {monthTx.length} lançamentos
+            </p>
+          )}
+        </div>
+      )}
+
+      {!isLoading && !isError && monthTx.length === 0 && (
         <EmptyState title="Nenhum lançamento neste mês ainda" />
       )}
 
+      {!isLoading && !isError && monthTx.length > 0 && visibleTx.length === 0 && (
+        <EmptyState title="Nenhum lançamento encontrado">
+          Tente outro trecho da descrição ou da categoria.
+        </EmptyState>
+      )}
+
       <div className="grid grid-cols-1 gap-2">
-        {visibleTx.map((tx) => (
+        {shownTx.map((tx) => (
           <TransactionListItem
             key={tx.id}
             tx={tx}
@@ -290,6 +337,16 @@ export default function TransacoesPage() {
           />
         ))}
       </div>
+
+      {visibleTx.length > shownTx.length && (
+        <Button
+          variant="outline"
+          className="h-11 justify-self-center px-4"
+          onClick={() => setLimitState({ key: limitKey, count: limit + PAGE_SIZE })}
+        >
+          Mostrar mais ({visibleTx.length - shownTx.length} restantes)
+        </Button>
+      )}
     </div>
   )
 }

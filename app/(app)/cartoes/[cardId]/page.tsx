@@ -7,6 +7,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { ErrorState } from "@/components/ui/error-state"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -32,7 +33,7 @@ export default function CardDetailPage({
   const { cardId } = use(params)
   const { data: cards } = useCards()
   const { data: categories } = useCategories()
-  const { data: invoices, isLoading } = useCardInvoices(cardId)
+  const { data: invoices, isLoading, isError, refetch } = useCardInvoices(cardId)
   const createPurchase = useCreateCardPurchase()
   const [open, setOpen] = useState(false)
 
@@ -102,7 +103,9 @@ export default function CardDetailPage({
         </div>
       )}
 
-      {!isLoading && invoices?.length === 0 && (
+      {isError && <ErrorState onRetry={() => refetch()} />}
+
+      {!isLoading && !isError && invoices?.length === 0 && (
         <EmptyState title="Nenhuma fatura ainda">
           As compras feitas neste cartão aparecem aqui, agrupadas por fatura.
         </EmptyState>

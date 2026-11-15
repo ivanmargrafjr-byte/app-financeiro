@@ -7,6 +7,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { ErrorState } from "@/components/ui/error-state"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
@@ -47,7 +48,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export default function CartoesPage() {
-  const { data: cards, isLoading: loadingCards } = useCards()
+  const { data: cards, isLoading: loadingCards, isError, refetch } = useCards()
   // Gates the panels below as well: without the archived cards their cutoff cannot be
   // applied, and a replaced card's invoices would be counted for a beat as if owed.
   const { data: archivedCards, isLoading: loadingArchived } = useArchivedCards()
@@ -179,7 +180,9 @@ export default function CartoesPage() {
         </div>
       )}
 
-      {!isLoading && cards?.length === 0 && (
+      {isError && <ErrorState onRetry={() => refetch()} />}
+
+      {!isLoading && !isError && cards?.length === 0 && (
         <EmptyState title="Nenhum cartão cadastrado ainda" />
       )}
 

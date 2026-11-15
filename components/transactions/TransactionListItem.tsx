@@ -20,6 +20,7 @@ import { formatCentsBRL } from "@/lib/domain/money"
 import { FOCUS_CLASS, focusAnchorId } from "@/lib/navigation/focus"
 import {
   useDeleteAccountTransaction,
+  useRestoreAccountTransaction,
   useDeleteTransfer,
   useReverseTransaction,
 } from "@/lib/hooks/useTransactions"
@@ -42,6 +43,7 @@ export function TransactionListItem({
   const reverseTransaction = useReverseTransaction()
   const reverseCardSettlement = useReverseCardSettlement()
   const deleteTransaction = useDeleteAccountTransaction()
+  const restoreTransaction = useRestoreAccountTransaction()
   const deleteTransfer = useDeleteTransfer()
   const deleteCardTransaction = useDeleteCardTransaction()
   const deleteRecurringOccurrence = useDeleteRecurringOccurrence()
@@ -90,10 +92,24 @@ export function TransactionListItem({
           ruleId: tx.recurringSeriesId,
           month: tx.competenceMonth,
         })
-      } else {
-        await deleteTransaction.mutateAsync(tx.id)
+        toast.success("Lançamento excluído")
+        return
       }
-      toast.success("Lançamento excluído")
+      const deleted = await deleteTransaction.mutateAsync(tx.id)
+      toast.success("Lançamento excluído", {
+        duration: 8000,
+        action: deleted && {
+          label: "Desfazer",
+          onClick: async () => {
+            try {
+              await restoreTransaction.mutateAsync(deleted)
+              toast.success("Lançamento restaurado")
+            } catch {
+              toast.error("Não foi possível restaurar o lançamento. Tente lançá-lo de novo.")
+            }
+          },
+        },
+      })
     } catch {
       toast.error("Não foi possível excluir o lançamento")
     }
@@ -173,7 +189,7 @@ export function TransactionListItem({
         )}
         <span
           className={
-            "text-sm font-medium " +
+            "text-sm font-medium tabular-nums " +
             (tx.direction === "in" ? "text-emerald-700" : "text-foreground")
           }
         >

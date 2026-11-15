@@ -1,3 +1,5 @@
+import { formatCentsBRL } from "@/lib/domain/money"
+
 export type CategorySlice = {
   categoryId: string
   name: string
@@ -52,7 +54,13 @@ export function CategoryPieChart({
       {/* Plain SVG, not Recharts: ResponsiveContainer here only ever laid out
           correctly after a mouse hover forced a recompute — never on mount,
           and never on touch, which made the chart permanently blank on iPad. */}
-      <svg width={180} height={180} viewBox="0 0 180 180" className="-rotate-90">
+      <svg
+        width={180}
+        height={180}
+        viewBox="0 0 180 180"
+        className="-rotate-90"
+        aria-hidden={onSelect ? undefined : true}
+      >
         {slices.map((slice) => (
           <circle
             key={slice.categoryId}
@@ -83,6 +91,26 @@ export function CategoryPieChart({
           </circle>
         ))}
       </svg>
+      {/* Charts alone are not readable by a screen reader: same data as a table. */}
+      <table className="sr-only">
+        <caption>Despesas por categoria</caption>
+        <thead>
+          <tr>
+            <th scope="col">Categoria</th>
+            <th scope="col">Valor</th>
+            <th scope="col">Parte do total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((slice) => (
+            <tr key={slice.categoryId}>
+              <th scope="row">{slice.name}</th>
+              <td>{formatCentsBRL(slice.amountCents)}</td>
+              <td>{total > 0 ? Math.round((slice.amountCents / total) * 100) : 0}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }

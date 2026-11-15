@@ -381,11 +381,13 @@ export function useDeleteAccountTransaction() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      await runTransaction(db, async (trx) => {
+    // Returns what was deleted so the caller can offer "Desfazer" (see
+    // useRestoreAccountTransaction); null when there was nothing to delete.
+    mutationFn: async (id: string): Promise<DeletedAccountTransaction | null> => {
+      return runTransaction(db, async (trx) => {
         const txRef = transactionDocRef(user!.uid, id)
         const txSnap = await trx.get(txRef)
-        if (!txSnap.exists()) return
+        if (!txSnap.exists()) return null
         const data = txSnap.data()
         const wasSettled = (data.settled as boolean | undefined) ?? true
 
@@ -400,6 +402,39 @@ export function useDeleteAccountTransaction() {
           }
         }
         trx.delete(txRef)
+        return { id, data }
+      })
+    },
+    onSuccess: () => invalidateTransactionQueries(queryClient, user?.uid),
+  })
+}
+
+export type DeletedAccountTransaction = { id: string; data: Record<string, unknown> }
+
+/** Puts back an entry removed by useDeleteAccountTransaction, re-applying its balance effect. */
+export function useRestoreAccountTransaction() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }: DeletedAccountTransaction) => {
+      await runTransaction(db, async (trx) => {
+        const txRef = transactionDocRef(user!.uid, id)
+        // Already back (double click on "Desfazer"): don't apply the balance twice.
+        if ((await trx.get(txRef)).exists()) return
+        const wasSettled = (data.settled as boolean | undefined) ?? true
+        if (wasSettled) {
+          const accountRef = accountDocRef(user!.uid, data.accountId as string)
+          if ((await trx.get(accountRef)).exists()) {
+            trx.update(accountRef, {
+              currentBalanceCents: increment(
+                signedAmount(data.direction as "in" | "out", data.amountCents as number)
+              ),
+              updatedAt: serverTimestamp(),
+            })
+          }
+        }
+        trx.set(txRef, data)
       })
     },
     onSuccess: () => invalidateTransactionQueries(queryClient, user?.uid),

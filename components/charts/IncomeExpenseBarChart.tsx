@@ -22,7 +22,26 @@ export function IncomeExpenseBarChart({ series }: { series: MonthTotals[] }) {
 
   return (
     <div className="grid gap-3">
-      <div className="flex h-55 items-end justify-center gap-4 sm:gap-6">
+      <table className="sr-only">
+        <caption>Receitas e despesas por mês</caption>
+        <thead>
+          <tr>
+            <th scope="col">Mês</th>
+            <th scope="col">Receitas</th>
+            <th scope="col">Despesas</th>
+          </tr>
+        </thead>
+        <tbody>
+          {series.map((entry) => (
+            <tr key={entry.month}>
+              <th scope="row">{shortMonthLabel(entry.month)}</th>
+              <td>{formatCentsBRL(entry.receitasCents)}</td>
+              <td>{formatCentsBRL(entry.despesasCents)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div aria-hidden className="flex h-55 items-end justify-center gap-4 sm:gap-6">
         {series.map((entry) => (
           <div key={entry.month} className="flex flex-col items-center gap-2">
             <div className="flex items-end gap-1.5">

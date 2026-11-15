@@ -7,8 +7,37 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+/** Whether the user typed into the open dialog — set by DialogContent, read when it is dismissed. */
+type DirtyTracker = { isDirty: () => boolean; set: (value: boolean) => void }
+const DirtyContext = React.createContext<DirtyTracker | null>(null)
+
+function Dialog({ onOpenChange, ...props }: DialogPrimitive.Root.Props) {
+  const [dirty] = React.useState<DirtyTracker>(() => {
+    let value = false
+    return { isDirty: () => value, set: (next) => (value = next) }
+  })
+  return (
+    <DirtyContext.Provider value={dirty}>
+      <DialogPrimitive.Root
+        data-slot="dialog"
+        onOpenChange={(open, details) => {
+          // An accidental dismissal (click outside, Escape) must not silently throw
+          // away what was typed. The close button and Cancel remain deliberate.
+          if (
+            !open &&
+            dirty.isDirty() &&
+            (details.reason === "outside-press" || details.reason === "escape-key") &&
+            !window.confirm("Descartar as alterações não salvas?")
+          ) {
+            details.cancel()
+            return
+          }
+          onOpenChange?.(open, details)
+        }}
+        {...props}
+      />
+    </DirtyContext.Provider>
+  )
 }
 
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
@@ -47,6 +76,11 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
+  const dirty = React.useContext(DirtyContext)
+  // The popup mounts on every open: start each one clean.
+  React.useEffect(() => {
+    dirty?.set(false)
+  }, [dirty])
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -56,6 +90,9 @@ function DialogContent({
           "fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-full overflow-y-auto overscroll-contain max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
+        onInput={() => {
+          dirty?.set(true)
+        }}
         {...props}
       >
         {children}

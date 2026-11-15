@@ -32,6 +32,7 @@ import { useEnsureRecurringGenerated } from "@/lib/hooks/useRecurringRules"
 import { isAdminEmail } from "@/lib/admin/isAdmin"
 import { Button } from "@/components/ui/button"
 import { MonthSwitcher } from "@/components/layout/MonthSwitcher"
+import { StatusBanners } from "@/components/layout/StatusBanners"
 
 const NAV_ITEMS = [
   { href: "/inicio", label: "Início", icon: Home },
@@ -128,6 +129,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
+        <StatusBanners />
         {/* With nothing but the mobile sign-out left in it, the bar is an empty
             band on a desktop screen — so it goes away there entirely. */}
         <header

@@ -7,6 +7,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { ErrorState } from "@/components/ui/error-state"
 import {
   Dialog,
   DialogContent,
@@ -34,7 +35,7 @@ export default function AccountDetailPage({
   const { accountId } = use(params)
   const { data: accounts } = useAccounts()
   const { data: categories } = useCategories()
-  const { data: transactions, isLoading } = useAccountTransactions(accountId)
+  const { data: transactions, isLoading, isError, refetch } = useAccountTransactions(accountId)
   const createTransaction = useCreateAccountTransaction()
   const [open, setOpen] = useState(false)
   const [adjustOpen, setAdjustOpen] = useState(false)
@@ -121,7 +122,9 @@ export default function AccountDetailPage({
         </div>
       )}
 
-      {!isLoading && transactions?.length === 0 && (
+      {isError && <ErrorState onRetry={() => refetch()} />}
+
+      {!isLoading && !isError && transactions?.length === 0 && (
         <EmptyState title="Nenhum lançamento nesta conta ainda">
           Lançamentos e transferências desta conta aparecem aqui.
         </EmptyState>

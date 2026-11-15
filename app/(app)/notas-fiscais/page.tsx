@@ -7,6 +7,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { ErrorState } from "@/components/ui/error-state"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
@@ -25,7 +26,7 @@ function formatBrDate(date: string) {
 }
 
 export default function NotasFiscaisPage() {
-  const { data: notes, isLoading } = useFiscalNotes()
+  const { data: notes, isLoading, isError, refetch } = useFiscalNotes()
   const createNote = useCreateFiscalNote()
   const [open, setOpen] = useState(false)
 
@@ -69,7 +70,9 @@ export default function NotasFiscaisPage() {
         </div>
       )}
 
-      {!isLoading && notes?.length === 0 && (
+      {isError && <ErrorState onRetry={() => refetch()} />}
+
+      {!isLoading && !isError && notes?.length === 0 && (
         <EmptyState title="Nenhuma nota fiscal cadastrada ainda">
           Envie o PDF ou uma foto da primeira e o app lê os dados para você.
         </EmptyState>

@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
+import { ErrorState } from "@/components/ui/error-state"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -35,7 +36,7 @@ import type { RecurringRule } from "@/lib/types"
 import type { RecurringRuleFormValues } from "@/lib/validators/recurringRule"
 
 export default function RecorrentesPage() {
-  const { data: rules, isLoading } = useRecurringRules()
+  const { data: rules, isLoading, isError, refetch } = useRecurringRules()
   const { data: accounts } = useAccounts()
   const { data: categories } = useCategories()
   const createRule = useCreateRecurringRule()
@@ -129,7 +130,9 @@ export default function RecorrentesPage() {
         </div>
       )}
 
-      {!isLoading && rules?.length === 0 && (
+      {isError && <ErrorState onRetry={() => refetch()} />}
+
+      {!isLoading && !isError && rules?.length === 0 && (
         <EmptyState title="Nenhuma recorrência cadastrada ainda">
           Crie uma para assinaturas, salário e outros lançamentos mensais.
         </EmptyState>

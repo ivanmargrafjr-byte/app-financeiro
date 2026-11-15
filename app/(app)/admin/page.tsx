@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react"
 import { toast } from "sonner"
 
 import {
@@ -17,6 +18,10 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/ui/empty-state"
+import { ErrorState } from "@/components/ui/error-state"
+import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -59,12 +64,51 @@ function statusVariant(status: string): "secondary" | "outline" | "destructive" 
   return "outline"
 }
 
+type SortKey = "email" | "displayName" | "subscriptionStatus"
+
+function SortableHead({
+  label,
+  column,
+  sort,
+  onSort,
+}: {
+  label: string
+  column: SortKey
+  sort: { key: SortKey; dir: "asc" | "desc" }
+  onSort: (key: SortKey) => void
+}) {
+  const active = sort.key === column
+  const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown
+  return (
+    <TableHead
+      aria-sort={!active ? "none" : sort.dir === "asc" ? "ascending" : "descending"}
+      className="bg-background sticky top-0"
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className="hover:text-foreground focus-visible:ring-ring -mx-2 inline-flex min-h-9 items-center gap-1 rounded-md px-2 focus-visible:ring-2 focus-visible:outline-none"
+      >
+        {label}
+        <Icon className="size-3.5" aria-hidden />
+      </button>
+    </TableHead>
+  )
+}
+
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const now = useNow()
   const [users, setUsers] = useState<AdminUser[] | null>(null)
   const [loadingUsers, setLoadingUsers] = useState(true)
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
+  const [search, setSearch] = useState("")
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({
+    key: "email",
+    dir: "asc",
+  })
   const [busyUid, setBusyUid] = useState<string | null>(null)
 
   const authorized = !authLoading && !!user && isAdminEmail(user.email)
@@ -85,6 +129,7 @@ export default function AdminPage() {
     let cancelled = false
     async function loadUsers() {
       setLoadingUsers(true)
+      setLoadFailed(false)
       try {
         const idToken = await user!.getIdToken()
         const res = await fetch("/api/admin/users", {
@@ -94,7 +139,7 @@ export default function AdminPage() {
         const { users: list } = await res.json()
         if (!cancelled) setUsers(list)
       } catch {
-        if (!cancelled) toast.error("Não foi possível carregar os usuários")
+        if (!cancelled) setLoadFailed(true)
       } finally {
         if (!cancelled) setLoadingUsers(false)
       }
@@ -103,7 +148,7 @@ export default function AdminPage() {
     return () => {
       cancelled = true
     }
-  }, [authorized, user])
+  }, [authorized, user, reloadKey])
 
   const STATUS_TOASTS: Record<ManualStatus, string> = {
     canceled: "Usuário bloqueado",
@@ -153,6 +198,28 @@ export default function AdminPage() {
     }
   }
 
+  const visibleUsers = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase("pt-BR")
+    const rows = (users ?? []).filter(
+      (u) =>
+        !term ||
+        (u.email ?? "").toLocaleLowerCase("pt-BR").includes(term) ||
+        (u.displayName ?? "").toLocaleLowerCase("pt-BR").includes(term)
+    )
+    const factor = sort.dir === "asc" ? 1 : -1
+    return rows.sort(
+      (a, b) =>
+        factor *
+        (a[sort.key] ?? "").localeCompare(b[sort.key] ?? "", "pt-BR", { sensitivity: "base" })
+    )
+  }, [users, search, sort])
+
+  function toggleSort(key: SortKey) {
+    setSort((prev) =>
+      prev.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }
+    )
+  }
+
   if (authLoading || !authorized) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
@@ -165,19 +232,55 @@ export default function AdminPage() {
     <div className="p-4">
       <h1 className="mb-4 text-lg font-semibold">Usuários</h1>
       {loadingUsers ? (
-        <p className="text-muted-foreground text-sm">Carregando usuários...</p>
+        <div className="grid gap-2" role="status" aria-label="Carregando usuários">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-12" />
+          ))}
+        </div>
+      ) : loadFailed ? (
+        <ErrorState
+          title="Não foi possível carregar os usuários"
+          onRetry={() => setReloadKey((k) => k + 1)}
+        />
       ) : (
+        <>
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <Input
+            type="search"
+            aria-label="Buscar usuário por e-mail ou nome"
+            placeholder="Buscar por e-mail ou nome"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-10 max-w-sm"
+          />
+          <p className="text-muted-foreground text-sm" role="status" aria-live="polite">
+            {visibleUsers.length === (users?.length ?? 0)
+              ? `${visibleUsers.length} usuários`
+              : `${visibleUsers.length} de ${users?.length ?? 0} usuários`}
+          </p>
+        </div>
+        {visibleUsers.length === 0 && (
+          <EmptyState title="Nenhum usuário encontrado">
+            {search ? "Tente outro trecho do e-mail ou do nome." : "Ainda não há usuários cadastrados."}
+          </EmptyState>
+        )}
+        {visibleUsers.length > 0 && (
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>E-mail</TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead>Assinatura</TableHead>
+              <SortableHead label="E-mail" column="email" sort={sort} onSort={toggleSort} />
+              <SortableHead label="Nome" column="displayName" sort={sort} onSort={toggleSort} />
+              <SortableHead
+                label="Assinatura"
+                column="subscriptionStatus"
+                sort={sort}
+                onSort={toggleSort}
+              />
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users?.map((u) => {
+            {visibleUsers.map((u) => {
               const blocked = u.subscriptionStatus === "canceled"
               const exempt = u.subscriptionStatus === "exempt"
               const view = adminStatusView(u.subscriptionStatus, u.trialEndsAt, now)
@@ -247,6 +350,8 @@ export default function AdminPage() {
             })}
           </TableBody>
         </Table>
+        )}
+        </>
       )}
     </div>
   )
