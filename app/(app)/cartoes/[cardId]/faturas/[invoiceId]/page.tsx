@@ -136,20 +136,22 @@ export default function InvoiceDetailPage({
       {invoice && (
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight md:text-2xl capitalize">
+            <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight md:text-2xl">
               {card && <EntityIcon name={card.icon} color={card.color} imageUrl={card.iconUrl} />}
-              {monthLabel(monthOfDate(invoice.dueDate))}
+              <span className="first-letter:uppercase">
+                {monthLabel(monthOfDate(invoice.dueDate))}
+              </span>
             </h1>
             <p className="text-muted-foreground text-sm">
               Fecha {invoice.closingDate.split("-").reverse().join("/")} · Vence{" "}
               {invoice.dueDate.split("-").reverse().join("/")}
             </p>
-            <p className="mt-1 text-2xl font-semibold">
+            <p className="mt-1 text-2xl font-semibold tabular-nums">
               {formatCentsBRL(invoice.totalAmountCents)}
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <Badge variant={invoice.status === "paid" ? "secondary" : "default"}>
+            <Badge variant={invoice.status === "paid" ? "secondary" : "outline"}>
               {invoice.status === "paid" ? "Paga" : "Aberta"}
             </Badge>
             {invoice.status === "open" && (

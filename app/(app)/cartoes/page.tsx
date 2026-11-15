@@ -245,8 +245,20 @@ export default function CartoesPage() {
                 const committed = usage?.committedCents ?? 0
                 const available = usage?.availableCents ?? card.limitCents
                 return (
-                  <div className="grid gap-1">
-                    <div className="bg-muted h-1.5 overflow-hidden rounded-full">
+                  <div className="grid gap-2">
+                    {/* The figure someone opens this screen for: what can still be spent. */}
+                    <p
+                      className={
+                        available < 0
+                          ? "text-destructive text-lg font-semibold tabular-nums"
+                          : "text-foreground text-lg font-semibold tabular-nums"
+                      }
+                    >
+                      {available < 0
+                        ? `${formatCentsBRL(Math.abs(available))} acima do limite`
+                        : `${formatCentsBRL(available)} livres`}
+                    </p>
+                    <div className="bg-muted-strong h-1.5 overflow-hidden rounded-full">
                       <div
                         className={
                           available < 0 ? "bg-destructive h-full" : "bg-primary h-full"
@@ -256,25 +268,14 @@ export default function CartoesPage() {
                     </div>
                     {/* What the app knows is owed, not what the bank reports: a purchase
                         that never reached the app is missing from both sides. */}
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-muted-foreground text-sm tabular-nums">
                       {formatCentsBRL(committed)} em faturas abertas de{" "}
                       {formatCentsBRL(card.limitCents)}
-                    </p>
-                    <p
-                      className={
-                        available < 0
-                          ? "text-destructive text-sm"
-                          : "text-muted-foreground text-sm"
-                      }
-                    >
-                      {available < 0
-                        ? `${formatCentsBRL(Math.abs(available))} acima do limite`
-                        : `${formatCentsBRL(available)} de limite livre`}
                     </p>
                   </div>
                 )
               })()}
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground mt-3 border-t pt-3 text-xs">
                 Fecha dia {card.closingDay} · Vence dia {card.dueDay}
               </p>
             </CardContent>

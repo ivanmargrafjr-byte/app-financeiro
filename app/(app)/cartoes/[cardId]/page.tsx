@@ -6,6 +6,7 @@ import { ArrowLeft, Plus } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -102,7 +103,9 @@ export default function CardDetailPage({
       )}
 
       {!isLoading && invoices?.length === 0 && (
-        <p className="text-muted-foreground text-sm">Nenhuma fatura ainda.</p>
+        <EmptyState title="Nenhuma fatura ainda">
+          As compras feitas neste cartão aparecem aqui, agrupadas por fatura.
+        </EmptyState>
       )}
 
       <div className="grid grid-cols-1 gap-2">
@@ -113,7 +116,7 @@ export default function CardDetailPage({
             className="border-border bg-card flex items-center justify-between rounded-md border px-3 py-3 hover:bg-accent"
           >
             <div>
-              <p className="text-sm font-medium capitalize">
+              <p className="block text-sm font-medium first-letter:uppercase">
                 {monthLabel(monthOfDate(invoice.dueDate))}
               </p>
               <p className="text-muted-foreground text-xs">
@@ -123,7 +126,7 @@ export default function CardDetailPage({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">{formatCentsBRL(invoice.totalAmountCents)}</span>
-              <Badge variant={invoice.status === "paid" ? "secondary" : "default"}>
+              <Badge variant={invoice.status === "paid" ? "secondary" : "outline"}>
                 {invoice.status === "paid" ? "Paga" : "Aberta"}
               </Badge>
             </div>

@@ -6,6 +6,7 @@ import { ArrowLeft, Plus, SlidersHorizontal, Upload } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/ui/empty-state"
 import {
   Dialog,
   DialogContent,
@@ -121,9 +122,9 @@ export default function AccountDetailPage({
       )}
 
       {!isLoading && transactions?.length === 0 && (
-        <p className="text-muted-foreground text-sm">
-          Nenhum lançamento nesta conta ainda.
-        </p>
+        <EmptyState title="Nenhum lançamento nesta conta ainda">
+          Lançamentos e transferências desta conta aparecem aqui.
+        </EmptyState>
       )}
 
       <div className="grid grid-cols-1 gap-2">
