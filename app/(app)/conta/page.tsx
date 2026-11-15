@@ -4,6 +4,7 @@ import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { AppearanceCard } from "@/components/account/AppearanceCard"
 import { DeleteAccountCard } from "@/components/account/DeleteAccountCard"
 import { SecurityCard } from "@/components/account/SecurityCard"
 import { useAuth } from "@/lib/auth/AuthProvider"
@@ -28,6 +29,8 @@ export default function ContaPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <AppearanceCard />
 
       <SecurityCard />
 
