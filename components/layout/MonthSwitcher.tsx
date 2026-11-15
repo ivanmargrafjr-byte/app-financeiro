@@ -9,7 +9,7 @@ export function MonthSwitcher() {
   const { month, nextMonth, prevMonth, goToCurrentMonth } = useMonth()
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1" role="group" aria-label="Mês exibido">
       <Button
         variant="outline"
         size="icon"
@@ -20,11 +20,17 @@ export function MonthSwitcher() {
         <ChevronLeft className="size-4" />
       </Button>
       <button
+        type="button"
         onClick={goToCurrentMonth}
-        className="min-w-40 py-3 text-center text-sm font-medium capitalize hover:underline"
+        className="focus-visible:ring-ring min-w-40 rounded-md py-3 text-center text-sm font-medium hover:underline focus-visible:ring-2 focus-visible:outline-none"
       >
         {monthLabel(month)}
+        <span className="sr-only"> — voltar ao mês atual</span>
       </button>
+      {/* Anuncia a troca de mês: o rótulo do botão acima não é uma região viva. */}
+      <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {monthLabel(month)}
+      </span>
       <Button
         variant="outline"
         size="icon"

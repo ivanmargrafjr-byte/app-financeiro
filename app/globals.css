@@ -88,10 +88,14 @@
   --muted-strong: var(--pedra-funda);
   --accent: var(--pedra-clara);
   --accent-foreground: var(--tinta);
-  --destructive: oklch(0.577 0.245 27.325);
+  /* 5.2:1 sobre a pedra — o vermelho anterior ficava em 4.1:1 como texto pequeno. */
+  --destructive: #c0201a;
   --border: var(--areia);
-  --input: var(--areia);
-  --ring: oklch(0.708 0 0);
+  /* Borda de campo precisa de 3:1 contra o fundo (WCAG 1.4.11): a areia, boa para
+     divisória, quase some em volta de um input. */
+  --input: #85857f;
+  /* O anel de foco usa a cor da marca: o cinza anterior dava 2.2:1 (mínimo 3:1). */
+  --ring: var(--violeta);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -105,7 +109,8 @@
   --sidebar-accent: var(--pedra-clara);
   --sidebar-accent-foreground: var(--tinta);
   --sidebar-border: var(--areia);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: var(--violeta);
+  color-scheme: light;
 }
 
 .dark {
@@ -115,8 +120,9 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  /* O violeta da marca, clareado para ler sobre o fundo escuro (8.7:1). */
+  --primary: #b39dff;
+  --primary-foreground: #14101f;
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -126,7 +132,7 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: #b39dff;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -134,25 +140,38 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: #b39dff;
+  --sidebar-primary-foreground: #14101f;
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: #b39dff;
+  color-scheme: dark;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring;
   }
   body {
     @apply bg-background text-foreground;
     padding-top: env(safe-area-inset-top);
+    padding-right: env(safe-area-inset-right);
     padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
   }
   html {
     @apply font-sans;
+    /* Sem o atraso de toque duplo e com o realce de toque na cor da marca,
+       em vez do cinza padrão do navegador. */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: color-mix(in srgb, var(--violeta) 15%, transparent);
+  }
+  /* Só com mouse/trackpad: no toque, o puxar-para-atualizar continua valendo. */
+  @media (pointer: fine) {
+    html {
+      overscroll-behavior: none;
+    }
   }
 }
 /*

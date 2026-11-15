@@ -13,6 +13,14 @@ import { FocusProvider } from "@/lib/navigation/FocusProvider"
 import { AppShell } from "@/components/layout/AppShell"
 import { hasAppAccess } from "@/lib/domain/subscriptionAccess"
 
+function LoadingScreen() {
+  return (
+    <div className="flex flex-1 items-center justify-center" role="status" aria-live="polite">
+      <p className="text-muted-foreground text-sm">Carregando…</p>
+    </div>
+  )
+}
+
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
   const { data: profile, isLoading: profileLoading } = useUserProfile()
@@ -37,15 +45,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }, [user, loading, profileLoading, grantingTrial, hasAccess, router])
 
   if (loading || !user || profileLoading || grantingTrial || !hasAccess) {
-    return (
-      <div className="flex flex-1 items-center justify-center">
-        <p className="text-muted-foreground text-sm">Carregando...</p>
-      </div>
-    )
+    return <LoadingScreen />
   }
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoadingScreen />}>
       <FocusProvider>
         <MonthProvider>
           <AppShell>{children}</AppShell>
